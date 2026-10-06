@@ -101,6 +101,30 @@ pause() {
     echo ""
 }
 
+resume() {
+    print_header
+    nama_vm=$@
+    echo "Men-suspend VM '$nama_vm' ..."
+    if [ -z "$nama_vm" ]; then
+        echo "ERROR: Masukkan nama VM. Contoh: $0 resume <nama_vm>"
+        exit 1
+    fi
+
+
+    VBoxManage controlvm "$nama_vm" resume > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        # while VBoxManage list runningvms | grep -q "\"$nama_vm\""; do
+        #     sleep 1
+        # done
+
+        echo "VM '$nama_vm' berhasil di resume. Status: running"
+    else
+        echo "ERROR: VM '$nama_vm' tidak sedang berjalan atau tidak terdaftar"
+        exit 1
+    fi
+    echo ""
+}
+
 snapshot_create() {
     print_header
     args=("$@")
@@ -169,6 +193,11 @@ case "$1" in
 	shift 1
         nama_vm=$@
         pause $nama_vm
+	;;
+    resume)
+	shift 1
+        nama_vm=$@
+        resume $nama_vm
 	;;
     snapshot)
 	case "$2" in
