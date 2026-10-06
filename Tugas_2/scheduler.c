@@ -1,19 +1,29 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
+
+typedef struct State {
+    char state[10];
+    int time_of_state;
+    struct State *nextState;
+} State;
 
 typedef struct Process {
     int pid;
     int arrival_time;
     int burst_time;
+    int remaining_time;
     int completion_time;
     int turnaround_time;
     int waiting_time;
     int first_start_time;
     int response_time;
+    State states;
 } Process;
 
 typedef struct Node {
     int pid;
+    int remaining_time;
     struct Node *next;
 } Node;
 
@@ -33,20 +43,107 @@ void count_response_time(Process* process){
     process->response_time = process->first_start_time - process->arrival_time;
 }
 
+void add_process_at_time(Process processes[], int total_process, Linkedlist *ready_queue, int time){
+    for (int i = 0; i < total_process; i++){
+        if (processes[i].arrival_time == time){
+            addQueue(ready_queue, &processes[i]);
+        }
+    }
+}
 
+void addQueue(Linkedlist *ready_queue, Process *process){
+    Node *new_process = malloc(sizeof(Node));
+    new_process->pid = process->pid;
+    new_process->remaining_time = process->remaining_time;
+    new_process->next = NULL;
+    //masih kosong atau lebih kecil dari head
+    if (ready_queue->head == NULL || new_process->remaining_time < ready_queue->head->remaining_time){
+        ready_queue->head = &new_process;
+        return;
+    }
+
+    //tidak kosong ready_queuenya
+    Node *current = ready_queue->head;
+    while (current->next != NULL && current->next->remaining_time <= new_process->remaining_time){
+        current = current->next; //catat context swict harusnya catat context swicth dan preemp juga kalau terganti di head TODO
+    }
+    new_process->next = current->next;   
+    current->next = new_process;
+}
+
+void removeHead(Linkedlist *ready_queue){
+    Node *process = ready_queue->head;
+    ready_queue->head = process->next;
+    free(process);
+}
+
+bool new_process_arrived(Process processes[], int total_process, int time){
+    for (int i = 0; i < total_process; i++){
+        if (processes[i].arrival_time == time){
+            return true;
+        }
+    }
+    return false;
+}
 
 Process* find_process_by_pid(Process processes[], int pid_target, int len) {
-    for (int i = 0; i < len; i++){
-        if (processes[i].pid == pid_target) {
-            return &processes[i];
-        }
+    if (pid_target <= len){
+        return &processes[pid_target - 1];
     }
     return NULL;
 }
 
-int execution(Process processes[]){
+int execution(Process processes[], int total_process){
     int time = 0;
-    Linkedlist queue;
+    Linkedlist ready_queue;
+    ready_queue.head = NULL;
+    int current_proccess = -1; //melihat pidnya
+    int prev_process = -1;
+    int completed_process = 0;
+
+    while (completed_process <= total_process) {
+        if (ready_queue.head != NULL){
+            Process *head_process = find_process_by_pid(processes, ready_queue.head->pid, total_process);
+            if (head_process->remaining_time == 0){
+                head_process->completion_time = time;
+                removeHead(&ready_queue);      //catat context swict
+                completed_process++;
+                prev_process = -1;             // preemp tidak dihitung jika headnya sudah habis sendiri
+            }
+        }
+        
+        if (new_process_arrived(processes, total_process, time)){
+            add_process_at_time(processes, total_process, &ready_queue, time);
+        }
+
+        //kalau masih kosong ready_queuenya lanjut ke time berikutnya
+        if (ready_queue.head == NULL){ 
+            time++;
+            continue;
+        }
+
+        current_proccess = ready_queue.head->pid;
+        //cek preemp
+        if (current_proccess != prev_process){ 
+            if (prev_process != -1){
+                //preem kalau sebelumnya bukan -1 atau sebelumnya proses lain
+            }
+            Process *currentProcess = find_process_by_pid(processes, current_proccess, total_process);
+            if (currentProcess->first_start_time == -1){
+                currentProcess->first_start_time = time; // catat pertama kali dimulai
+            }
+        }
+        prev_process = current_proccess;
+
+        //kurangi remaining time
+        ready_queue.head->remaining_time--;
+        find_process_by_pid(processes, current_proccess, total_process)->remaining_time--;
+
+
+        //lanjut time berikutnya
+        time++;
+
+    }
 }
 
 int main() {
@@ -58,17 +155,21 @@ int main() {
     processes[0].pid = 1;
     processes[0].arrival_time = 0;
     processes[0].burst_time = 8;
+    processes[0].remaining_time = 8;
     processes[1].pid = 2;
     processes[1].arrival_time = 4;
     processes[1].burst_time = 1;
+    processes[0].remaining_time = 1;
     processes[2].pid = 3;
     processes[2].arrival_time = 2;
     processes[2].burst_time = 2;
+    processes[0].remaining_time = 2;
     processes[3].pid = 4;
     processes[3].arrival_time = 5;
     processes[3].burst_time = 3;
+    processes[0].remaining_time = 3;
     
-    execution(processes);
+    // execution(processes);
     // for (int i = 0; i < len; i++){
     //     processes[i].pid = i;
     //     processes[i].burst_time = i+1;
