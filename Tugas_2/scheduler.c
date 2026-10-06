@@ -1,12 +1,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 
 typedef struct State {
     char state[10];
     int time_of_state;
     struct State *nextState;
 } State;
+
+typedef struct StateList {
+    State head;
+    State last;
+} StateList;
 
 typedef struct Process {
     int pid;
@@ -18,7 +24,7 @@ typedef struct Process {
     int waiting_time;
     int first_start_time;
     int response_time;
-    State states;
+    StateList states;
 } Process;
 
 typedef struct Node {
@@ -30,6 +36,11 @@ typedef struct Node {
 typedef struct Linkedlist{
     Node *head;
 } Linkedlist;
+
+const char ready[] = "READY";
+const char running[] = "RUNNING";
+const char waiting[] = "WAITING";
+const char exit_state[] = "EXIT";
 
 void count_turnaround_time(Process* process){
     process->turnaround_time = process->completion_time - process->arrival_time;
@@ -43,12 +54,22 @@ void count_response_time(Process* process){
     process->response_time = process->first_start_time - process->arrival_time;
 }
 
-void add_process_at_time(Process processes[], int total_process, Linkedlist *ready_queue, int time){
-    for (int i = 0; i < total_process; i++){
-        if (processes[i].arrival_time == time){
-            addQueue(ready_queue, &processes[i]);
-        }
+void save_state(Process *process, char state_str[], int time) {
+    // Get string length
+    int length = sizeof(state_str) / sizeof(state_str[0]);
+    // Initiate new State
+    State *new_state = malloc(sizeof(State));
+    
+    strncpy(new_state->state, state_str, sizeof(new_state->state) - 1);
+    new_state->state[sizeof(new_state->state) - 1] = '\0';
+    new_state->time_of_state = time;
+    new_state->nextState = NULL;
+
+    State *curr_state = &process->states.head;
+    while (curr_state->nextState != NULL) {
+        curr_state = curr_state->nextState;
     }
+    curr_state->nextState = new_state;
 }
 
 void addQueue(Linkedlist *ready_queue, Process *process){
@@ -69,6 +90,14 @@ void addQueue(Linkedlist *ready_queue, Process *process){
     }
     new_process->next = current->next;   
     current->next = new_process;
+}
+
+void add_process_at_time(Process processes[], int total_process, Linkedlist *ready_queue, int time){
+    for (int i = 0; i < total_process; i++){
+        if (processes[i].arrival_time == time){
+            addQueue(ready_queue, &processes[i]);
+        }
+    }
 }
 
 void removeHead(Linkedlist *ready_queue){
@@ -183,6 +212,8 @@ int main() {
     printf("%p\n", ptr);
     // Process p = {1,2,3,4,5,6,7,8};
     Process p;
+    // Head jadi dummy var. Baru keisi mulai head.nextState
+    p.states.head.nextState = NULL;
     p.arrival_time = 4;
     Process *p_ptr = &p;
 
@@ -193,6 +224,8 @@ int main() {
 
 
     printf("%d\n", processes[2].pid);
-
+    printf("Test save_state\n");
+    save_state(p_ptr, exit_state, 5);
+    printf("%s\n", p.states.head.nextState->state);
     return 0;
 }
