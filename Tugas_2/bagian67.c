@@ -77,10 +77,13 @@ void save_state(Process *process, char state_str[], int time) {
 
     new_state->nextState = NULL;
 
-    // Looping sampai ketemu state terakhir
+    
     State *curr_state = &process->states;
-    while (curr_state->nextState != NULL) {
-        curr_state = curr_state->nextState;
+    if (curr_state != NULL) {
+        // Looping sampai ketemu state terakhir
+        while (curr_state->nextState != NULL) {
+            curr_state = curr_state->nextState;
+        }
     }
     // Letakkan state baru setelah state terakhir
     curr_state->nextState = new_state;
