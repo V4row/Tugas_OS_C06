@@ -34,22 +34,22 @@ void count_response_time(Process* process){
 }
 
 
-void input_processes(Process* processes[], int n) {
+void input_processes(Process processes[], int n) {
     for (int i = 0; i < n; i++) {
-        processes[i]->pid = i + 1;
+        processes[i].pid = i + 1;
 
-        printf("P%d - masukkan Arrival Time dan Burst Time: ", processes[i]->pid);
-        scanf("%d %d", &processes[i]->arrival_time, &processes[i]->burst_time);
+        printf("P%d - masukkan Arrival Time dan Burst Time: ", processes[i].pid);
+        scanf("%d %d", &processes[i].arrival_time, &processes[i].burst_time);
 
-        processes[i]->completion_time = 0;
-        processes[i]->turnaround_time = 0;
-        processes[i]->waiting_time = 0;
-        processes[i]->response_time = 0;
-        processes[i]->first_start_time = -1;
+        processes[i].completion_time = 0;
+        processes[i].turnaround_time = 0;
+        processes[i].waiting_time = 0;
+        processes[i].response_time = 0;
+        processes[i].first_start_time = -1;
     }
 }
 
-void print_process_input(Process* processes[], int n) {
+void print_process_input(Process processes[], int n) {
     printf("\n============================================================\n");
     printf("PROCESS INPUT\n");
     printf("============================================================\n");
@@ -57,9 +57,9 @@ void print_process_input(Process* processes[], int n) {
     
     for (int i = 0; i < n; i++) {
         printf("P%d\t%d\t\t%d\n", 
-               processes[i]->pid, 
-               processes[i]->arrival_time, 
-               processes[i]->burst_time);
+               processes[i].pid, 
+               processes[i].arrival_time, 
+               processes[i].burst_time);
     }
     printf("============================================================\n\n");
 }
