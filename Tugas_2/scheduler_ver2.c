@@ -28,12 +28,23 @@ typedef struct ProcessList{
     Process *curr;
 } ProcessList;
 
+typedef struct executionTimeline{
+    int pid;
+    int end;
+    struct executionTimeline *next;
+} executionTimeline;
+
+typedef struct Timeline{
+    executionTimeline *head_timeline;
+    executionTimeline *tail_timeline;
+} Timeline;
+
 const char ready[] = "READY";
 const char running[] = "RUNNING";
 const char waiting[] = "WAITING";
 const char terminated[] = "TERMINATED";
 int context_switch_count = 0;
-const int N = 3; // inisiasi jumlah proses
+// const N = 3; // inisiasi jumlah proses
 
 void dequeue(ProcessList *queue) {
     // Jika queue tidak kosong
@@ -101,11 +112,19 @@ void removeFromQueue(ProcessList *queue, Process *p) {
     }
 }
 
+// Process *all_processes[N]; // Simpan semua proses agar dapat diakses nilai2 akhirnya
+// Process *current_process; // Proses yang sedang running
+// ProcessList ready_queue; // Proses yang ready, running, atau waiting
+// int t = 0; // Waktu saat ini
+// ProcessList not_arrived; // Proses yang belum datang
+
+enum { N = 4 };
 Process *all_processes[N]; // Simpan semua proses agar dapat diakses nilai2 akhirnya
-Process *current_process; // Proses yang sedang running
-ProcessList ready_queue; // Proses yang ready, running, atau waiting
-int t = 0; // Waktu saat ini
-ProcessList not_arrived; // Proses yang belum datang
+Process *current_process;
+ProcessList ready_queue;
+int t = 0;
+ProcessList not_arrived;
+Timeline timeline;
 
 bool eval_arrived(int time) {
     bool flag = false; // Jika true, ada proses baru datang (bisa lebih dari 1)
@@ -125,9 +144,74 @@ bool eval_arrived(int time) {
     return flag;
 }
 
+void insertToQueue(ProcessList* sorted_ready_queue, Process* process) {
+    process->nextProcess = NULL;
+    //kalau masih kosong
+    if (sorted_ready_queue->head == NULL) {
+        sorted_ready_queue->head = process;
+    }
+    // Process yang dingin dimasukkan lebih singkat waktunya
+    else if (process->remaining_time < sorted_ready_queue->head)
+    {
+        process->nextProcess = sorted_ready_queue->head;
+        sorted_ready_queue->head = process;
+    }
+    //Selain itu (ditengah-tengah)
+    else{
+        sorted_ready_queue->curr = sorted_ready_queue->head;
+        while (sorted_ready_queue->curr->nextProcess != NULL && sorted_ready_queue->curr->nextProcess->remaining_time <= process->remaining_time){
+            //current maju
+            sorted_ready_queue->curr= sorted_ready_queue->curr->nextProcess;
+        }
+
+        process->nextProcess = sorted_ready_queue->curr->nextProcess;
+        sorted_ready_queue->curr->nextProcess = process;
+    }
+    
+}
+
 ProcessList reevaluate_queue() {
     // TODO: implementasi penentuan urutan eksekusi
-    return ready_queue;
+    ProcessList sorted_ready_queue;
+    sorted_ready_queue.head = NULL;
+    sorted_ready_queue.curr = NULL;
+    Process* current = ready_queue.head;
+    while (current != NULL) {
+        // Ambil next Process dari current
+        Process *next = current->nextProcess;
+        insertToQueue(&sorted_ready_queue, current);
+        // Lanjut ke proses berikutnya
+        current = next;
+    }
+    sorted_ready_queue.curr = sorted_ready_queue.head;
+    return sorted_ready_queue;
+}
+
+void newTimeline(Timeline* timeline, int pid, int end) {
+    // Membuat timeline baru
+    executionTimeline *new_timeline = malloc(sizeof(executionTimeline));
+    new_timeline->pid = pid;
+    new_timeline->end = end;
+    new_timeline->next = NULL;
+ 
+    // Kalau masih kosong langsung buat sebagai head/timeline pertama dan tail
+    if (timeline->head_timeline == NULL){
+        timeline->head_timeline = new_timeline;
+        timeline->tail_timeline = new_timeline;
+        return;
+    }
+ 
+    // Kalau tidak tambah dibagian terakhir
+    timeline->tail_timeline->next = new_timeline;
+    timeline->tail_timeline = new_timeline;
+}
+
+void addTimeline(Timeline* timeline, int pid, int time) {
+    if (timeline->tail_timeline != NULL && timeline->tail_timeline->pid == pid) {
+        timeline->tail_timeline->end = time + 1;
+        return;
+    }
+    newTimeline(timeline, pid, time + 1);
 }
 
 void execute() {
@@ -160,6 +244,7 @@ void execute() {
         if (current_process != NULL) {
             // Eksekusi proses (kurangi remaining_time)
             current_process->remaining_time--;
+            addTimeline(&timeline, current_process->pid, t);
             // Jika proses sudah selesai dieksekusi
             if (current_process->remaining_time == 0) {
                 // Simpan state dan keluarkan dari ready_queue
@@ -210,23 +295,74 @@ void printStateTransitions() {
     printf("\n");
 }
 
+void printGanttChart(Timeline* timeline) {
+    printf("\n============================================================\n");
+    printf("CPU EXECUTION TIMELINE\n");
+    printf("============================================================\n");
+
+    // print gantt chart buat yang | P1 | P2 | P3 | P2 | P1 |
+    executionTimeline *current = timeline->head_timeline;
+    while (current != NULL) {
+        // kalau ternyata tidak ada proses masuk diawal
+         if (current->pid == 0) {
+            printf("| IDLE ");
+        } else {
+            printf("| P%-4d", current->pid);
+        }
+        current = current->next;
+    }
+    printf("|\n");
+    
+    // print gantt chart buat yang 0    3    5    7    8    13
+    current = timeline->head_timeline;
+    printf("%-7d", 0);
+    while (current != NULL) {
+        executionTimeline *next = current->next;
+        if (next == NULL) {
+            printf("%d\n", current->end);
+        } else {
+            printf("%-7d", current->end);
+        }
+        free(current);
+        current = next;
+    }
+    //kosongi
+    timeline->head_timeline = NULL;
+    timeline->tail_timeline = NULL;
+}
+
 
 int main() {
     ready_queue.head = NULL;
     not_arrived.head = NULL;
-    Process p1 = {1, 0, 3, 3};
-    Process p2 = {2, 0, 5, 5};
-    Process p3 = {3, 0, 2, 2};
+    Process p1 = {1, 0, 8, 8};
+    Process p2 = {2, 1, 4, 4};
+    Process p3 = {3, 2, 2, 2};
+    Process p4 = {4, 3, 5, 5};
     not_arrived.head = &p1;
     p1.nextProcess = &p2;
     p2.nextProcess = &p3;
-    p3.nextProcess = NULL;
+    p3.nextProcess = &p4;
+    p4.nextProcess = NULL;
     all_processes[0] = &p1;
     all_processes[1] = &p2;
     all_processes[2] = &p3;
+    all_processes[3] = &p4;
+
+    // Process p1 = {1, 0, 3, 3};
+    // Process p2 = {2, 0, 5, 5};
+    // Process p3 = {3, 0, 2, 2};
+    // not_arrived.head = &p1;
+    // p1.nextProcess = &p2;
+    // p2.nextProcess = &p3;
+    // p3.nextProcess = NULL;
+    // all_processes[0] = &p1;
+    // all_processes[1] = &p2;
+    // all_processes[2] = &p3;
 
     execute();
 
+    printGanttChart(&timeline);
     printContextSwitchInfo();
     printStateTransitions();
 

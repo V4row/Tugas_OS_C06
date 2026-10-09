@@ -101,7 +101,7 @@ void printProcessInput(Process processes[]) {
     
 //================= Rafa ==================//
     
-void printGanttChart(Process processes[], LinkedList* timeline) {
+void printGanttChart(LinkedList* timeline) {
     printf("\n============================================================\n");
     printf("CPU EXECUTION TIMELINE\n");
     printf("============================================================\n");
@@ -109,24 +109,51 @@ void printGanttChart(Process processes[], LinkedList* timeline) {
     // print gantt chart buat yang | P1 | P2 | P3 | P2 | P1 |
     executionTimeline *current = timeline->head_timeline;
     while (current != NULL) {
-        printf("| P%-4d", current->pid);
+        // kalau ternyata tidak ada proses masuk diawal
+         if (current->pid == 0) {
+            printf("| IDLE ");
+        } else {
+            printf("| P%-4d", current->pid);
+        }
         current = current->next;
     }
     printf("|\n");
     
     // print gantt chart buat yang 0    3    5    7    8    13
-    current = timeline;
+    current = timeline->head_timeline;
     printf("%-7d", 0);
     while (current != NULL) {
-        if (current->next == NULL) {
+        executionTimeline *next = current->next;
+        if (next == NULL) {
             printf("%d\n", current->end);
         } else {
-            printf("%-7d", current->end); 
+            printf("%-7d", current->end);
         }
-        executionTimeline *temp = current;
-        current = current->next;
-        // free(temp);
+        free(current);
+        current = next;
     }
+    //kosongi
+    timeline->head_timeline = NULL;
+    timeline->tail_timeline = NULL;
+}
+
+void printSchedulingTable(Process processes[], int total_process) {
+     printf("\n============================================================\n");
+    printf("SCHEDULING TABLE\n");
+    printf("============================================================\n");
+    printf("%-6s%-6s%-6s%-6s%-6s%-6s%-6s\n", "PID", "AT", "BT", "CT", "TAT", "WT", "RT");
+    printf("-----------------------------------------------------------------------\n");
+    for (int i = 0; i < total_process; i++) {
+        printf("P%-5d%-6d%-6d%-6d%-6d%-6d%-6d\n",
+            processes[i].pid,
+            processes[i].arrival_time,
+            processes[i].burst_time,
+            processes[i].completion_time,
+            processes[i].turnaround_time,
+            processes[i].waiting_time,
+            processes[i].response_time);
+    }
+    printf("=======================================================================\n\n");
 }
 
 //================= Velicia ==================//
@@ -185,11 +212,21 @@ void saveState(Process *process, const char state_str[], int time) {
 //================= Velicia ==================//
 
 //================= Vebian ==================//
+void addTimeline(LinkedList* timeline, int pid, int end) {
+    // Catat setiap time++, jadi endnya akan terus bertambah sampai jika pid masih sama
+    if (timeline->tail_timeline != NULL && timeline->tail_timeline->pid == pid) {
+        timeline->tail_timeline->end = end + 1; //Ternyata harus +1 biar sesuai di contoh
+        return;
+    }
+    newTimeline(timeline, pid, end + 1);
+}
+
 void newTimeline(LinkedList* timeline, int pid, int end) {
     // Membuat timeline baru
     executionTimeline *new_timeline = malloc(sizeof(executionTimeline));
     new_timeline->pid = pid;
     new_timeline->end = end;
+    new_timeline->next = NULL;
 
     // Kalau masih kosong langsung buat sebagai head/timeline pertama dan tail
     if (timeline->head_timeline == NULL){
@@ -218,11 +255,10 @@ void addQueue(LinkedList *ready_queue, Process *process, LinkedList *timeline){
         // newTimeline(timeline, ready_queue->head_node->process->pid, time);
         new_process_node->next = ready_queue->head_node;
         ready_queue->head_node = new_process_node;
-        context_switch_count++;
         return;
     }
 
-    //tidak kosong ready_queuenya, current akan terus maju sampai 
+    //tidak kosong ready_queuenya, current akan terus maju sampai ujung atau lebih kecil
     Node *current = ready_queue->head_node;
     while (current->next != NULL && current->next->process->remaining_time <= new_process_node->process->remaining_time){
         current = current->next; //catat context swict harusnya catat context swicth dan preemp juga kalau terganti di head_node TODO
@@ -312,29 +348,33 @@ void print_util_throughput(Process p[], int n, int total_simulation_time, int cp
 
 void execution(Process processes[], int total_process, LinkedList* timeline){
     LinkedList ready_queue;
-    
     ready_queue.head_node = NULL;
+    ready_queue.head_timeline = NULL;
+    ready_queue.tail_timeline = NULL;
+
     // int current_proccess = -1; //melihat pidnya
-    Process *current_proccess;
+    Process *current_proccess = NULL; // Proses yang sedang berjalan
+    Process *last_process = NULL; // Proses yang sebelumnya berjalan
+    Process *prev_process = NULL; // Proses yang sebelumnya berjalan (khusus premp)
 
-    Process *prev_process;
-    int completed_process = 0;
+    int completed_process = 0; 
 
-    printf("Rafael");
+    // printf("Rafael");
     while (completed_process < total_process) {
         if (ready_queue.head_node != NULL){
             Process *head_node_process = ready_queue.head_node->process;
-            // Process *head_node_process = findProcessById(processes, ready_queue.head_node->pid, total_process);
             if (head_node_process->remaining_time == 0){
                 head_node_process->completion_time = time;
-                removeHead_node(&ready_queue);      //catat context swict
-                context_switch_count++;
+                removeHead_node(&ready_queue);      
                 completed_process++;
-                // newTimeline(timeline, head_node_process->pid, time);
                 prev_process = NULL;             // preemp tidak dihitung jika head_nodenya sudah habis sendiri
             }
-        }
+        }   
         
+        // biar tidak print IDLE diakhir
+        if (completed_process == total_process) {
+            break;
+        }
         
 
         if (checkProcessArrival(processes, total_process)){
@@ -344,32 +384,46 @@ void execution(Process processes[], int total_process, LinkedList* timeline){
         
         //kalau masih kosong ready_queuenya lanjut ke time berikutnya
         if (ready_queue.head_node == NULL){ 
-            printf("Waktu ke: %d\n", time);
-            printf("PID : P%d\n\n", ready_queue.head_node->process->pid);
+            // printf("Waktu ke: %d\n", time);
+            // printf("PID : P%d\n\n", ready_queue.head_node->process->pid);
+            //pid 0 anggapannya process yang belum ada (IDLE)
+            //IDLE biar pas juga, kita kan formatnya PXXX :v
+            addTimeline(timeline, 0, time);
+            prev_process = NULL;
+            last_process = NULL;
             time++;
             continue;
         }
 
+        // Menjalankan proses yang ada di head
+
         current_proccess = ready_queue.head_node->process;
-        //cek preemp
-        if (current_proccess != prev_process){ 
+        if (current_proccess != last_process){ 
+            //cek preemp
             if (prev_process != NULL){
-                //preem kalau sebelumnya bukan -1 atau sebelumnya proses
-                // newTimeline(timeline, prev_process->pid, time);
+                preemption_count++;
+                // preem kalau sebelumnya bukan NULL atau sebelumnya proses yang sedang berjalan
+                // Dia akan NULL kalau di if pertama tadi masuk (process.remaining_time == 0)
+            }
+
+            // cek context switch, bukan context swict jika diawal atau baru masuk
+            if (last_process != NULL){
+                context_switch_count++;
             }
 
             if (current_proccess->first_start_time == -1){
                 current_proccess->first_start_time = time; // catat pertama kali dimulai
             }
         }
+
         prev_process = current_proccess;
+        last_process = current_proccess;
 
         //kurangi remaining time
-        ready_queue.head_node->process->remaining_time--;
+        current_proccess->remaining_time--;
 
         //lanjut time berikutnya
-        printf("Waktu ke: %d\n", time);
-        printf("PID : P%d\n\n", ready_queue.head_node->process->pid);
+        addTimeline(timeline, current_proccess->pid, time);
         time++;
     }
 }
@@ -383,11 +437,19 @@ int main() {
     
     Process processes[processCount];
     LinkedList timeline;
+    timeline.head_timeline = NULL;
+    timeline.tail_timeline = NULL;
+    timeline.head_node = NULL;
     inputProcesses(processes);
 
     execution(processes, processCount, &timeline); 
 
-    printGanttChart(processes, &timeline); //siapa pulak yang run ini 
+    calculate_process_metrics(processes, processCount);
+
+    printGanttChart(&timeline);
+    printSchedulingTable(processes, processCount);
+    printContextSwitchInfo();
+     //siapa pulak yang run ini 
     // processes[0].pid = 1;
     // processes[0].arrival_time = 0;
     // processes[0].burst_time = 8;
