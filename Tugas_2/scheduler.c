@@ -172,15 +172,16 @@ void printStateTransitions(Process processes[]) {
 
     // Loop setiap proses dan print perubahan statenya
     for (int i = 0; i < processCount; i++) {
-        State *s = &processes[i].states;
+        State *s = processes[i].states.nextState;
         printf("P%d : NEW ", processes[i].pid);
         while (s != NULL) {
             printf("-> %s (t=%d) ", s->state, s->time_of_state);
-            State *temp = s;
+            State *next = s->nextState;
             free(s);
-            s = s->nextState;
+            s = next;
         }
         printf("\n");
+        processes[i].states.nextState = NULL;
     }
     printf("\n");
 }
@@ -212,14 +213,6 @@ void saveState(Process *process, const char state_str[], int time) {
 //================= Velicia ==================//
 
 //================= Vebian ==================//
-void addTimeline(LinkedList* timeline, int pid, int end) {
-    // Catat setiap time++, jadi endnya akan terus bertambah sampai jika pid masih sama
-    if (timeline->tail_timeline != NULL && timeline->tail_timeline->pid == pid) {
-        timeline->tail_timeline->end = end + 1; //Ternyata harus +1 biar sesuai di contoh
-        return;
-    }
-    newTimeline(timeline, pid, end + 1);
-}
 
 void newTimeline(LinkedList* timeline, int pid, int end) {
     // Membuat timeline baru
@@ -240,11 +233,21 @@ void newTimeline(LinkedList* timeline, int pid, int end) {
     timeline->tail_timeline= new_timeline;
 }
 
+void addTimeline(LinkedList* timeline, int pid, int end) {
+    // Catat setiap time++, jadi endnya akan terus bertambah sampai jika pid masih sama
+    if (timeline->tail_timeline != NULL && timeline->tail_timeline->pid == pid) {
+        timeline->tail_timeline->end = end + 1; //Ternyata harus +1 biar sesuai di contoh
+        return;
+    }
+    newTimeline(timeline, pid, end + 1);
+}
+
 
 void addQueue(LinkedList *ready_queue, Process *process, LinkedList *timeline){
     Node *new_process_node = malloc(sizeof(Node));
     new_process_node->process = process;
     new_process_node->next = NULL;
+    saveState(process, ready, time);
     //masih kosong 
     if (ready_queue->head_node == NULL){
         ready_queue->head_node = new_process_node;
@@ -363,8 +366,10 @@ void execution(Process processes[], int total_process, LinkedList* timeline){
     while (completed_process < total_process) {
         if (ready_queue.head_node != NULL){
             Process *head_node_process = ready_queue.head_node->process;
+            // Jika proses selesai
             if (head_node_process->remaining_time == 0){
                 head_node_process->completion_time = time;
+                saveState(head_node_process, terminated, time);
                 removeHead_node(&ready_queue);      
                 completed_process++;
                 prev_process = NULL;             // preemp tidak dihitung jika head_nodenya sudah habis sendiri
@@ -402,6 +407,7 @@ void execution(Process processes[], int total_process, LinkedList* timeline){
             //cek preemp
             if (prev_process != NULL){
                 preemption_count++;
+                saveState(prev_process, waiting, time);
                 // preem kalau sebelumnya bukan NULL atau sebelumnya proses yang sedang berjalan
                 // Dia akan NULL kalau di if pertama tadi masuk (process.remaining_time == 0)
             }
@@ -414,6 +420,7 @@ void execution(Process processes[], int total_process, LinkedList* timeline){
             if (current_proccess->first_start_time == -1){
                 current_proccess->first_start_time = time; // catat pertama kali dimulai
             }
+            saveState(current_proccess, running, time);
         }
 
         prev_process = current_proccess;
@@ -449,6 +456,7 @@ int main() {
     printGanttChart(&timeline);
     printSchedulingTable(processes, processCount);
     printContextSwitchInfo();
+    printStateTransitions(processes);
      //siapa pulak yang run ini 
     // processes[0].pid = 1;
     // processes[0].arrival_time = 0;
