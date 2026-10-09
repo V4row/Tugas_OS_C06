@@ -52,7 +52,8 @@ typedef struct LinkedList{
 
 const char ready[] = "READY";
 const char running[] = "RUNNING";
-const char waiting[] = "WAITING";
+const char waiting[] = "WAITING"; 
+// Proses yang di-preempt akan kembali ke state READY, bukan WAITING seperti pada contoh output soal
 const char terminated[] = "TERMINATED";
 int processCount;
 int time = 0;
@@ -111,9 +112,9 @@ void printProcessInput(Process processes[]) {
 //================= Rafa ==================//
     
 void printGanttChart(LinkedList* timeline) {
-    printf("\n============================================================\n");
+    printf("\n=======================================================================\n");
     printf("CPU EXECUTION TIMELINE\n");
-    printf("============================================================\n");
+    printf("=======================================================================\n");
 
     // print gantt chart buat yang | P1 | P2 | P3 | P2 | P1 |
     executionTimeline *current = timeline->head_timeline;
@@ -144,12 +145,13 @@ void printGanttChart(LinkedList* timeline) {
     //kosongi
     timeline->head_timeline = NULL;
     timeline->tail_timeline = NULL;
+    printf("\n");
 }
 
 void printSchedulingTable(Process processes[], int total_process) {
-    printf("\n============================================================\n");
+    printf("=======================================================================\n");
     printf("SCHEDULING TABLE\n");
-    printf("============================================================\n");
+    printf("=======================================================================\n");
     printf("%-6s%-6s%-6s%-6s%-6s%-6s%-6s\n", "PID", "AT", "BT", "CT", "TAT", "WT", "RT");
     printf("-----------------------------------------------------------------------\n");
     for (int i = 0; i < total_process; i++) {
@@ -454,7 +456,7 @@ void execution(Process processes[], LinkedList *preempt_info, int total_process,
             //cek preemp
             if (prev_process != NULL){
                 preemption_count++;
-                saveState(prev_process, waiting, time);
+                saveState(prev_process, ready, time);
                 savePreemptInfo(preempt_info, prev_process, current_proccess, time);
                 // preem kalau sebelumnya bukan NULL atau sebelumnya proses yang sedang berjalan
                 // Dia akan NULL kalau di if pertama tadi masuk (process.remaining_time == 0)
