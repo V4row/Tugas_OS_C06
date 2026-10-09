@@ -29,6 +29,14 @@ typedef struct Node {
     struct Node *next;
 } Node;
 
+typedef struct Preemption {
+    struct Preemption *next;
+    int preemptedPid;
+    int remainingBT;
+    int newPid;
+    int preemptTime;
+} Preemption;
+
 typedef struct executionTimeline{
     int pid;
     int end;
@@ -39,6 +47,7 @@ typedef struct LinkedList{
     executionTimeline *head_timeline;
     executionTimeline *tail_timeline;
     Node *head_node;
+    Preemption *first_preemption;
 } LinkedList;
 
 const char ready[] = "READY";
@@ -138,7 +147,7 @@ void printGanttChart(LinkedList* timeline) {
 }
 
 void printSchedulingTable(Process processes[], int total_process) {
-     printf("\n============================================================\n");
+    printf("\n============================================================\n");
     printf("SCHEDULING TABLE\n");
     printf("============================================================\n");
     printf("%-6s%-6s%-6s%-6s%-6s%-6s%-6s\n", "PID", "AT", "BT", "CT", "TAT", "WT", "RT");
@@ -157,6 +166,25 @@ void printSchedulingTable(Process processes[], int total_process) {
 }
 
 //================= Velicia ==================//
+void printPreemptionInformation(LinkedList *preemptInfo) {
+    printf("=======================================================================\n");
+    printf("PREEMPTION INFORMATION\n");
+    printf("=======================================================================\n");
+
+    if (preemption_count == 0) {
+        printf("Tidak ada preemption.\n");
+    } else {
+        Preemption *curr = preemptInfo->first_preemption;
+        while (curr != NULL) {
+            printf("t=%d : P%d PREEMPTED (sisa BT=%d) -> P%d RUNNING\n", curr->preemptTime, curr->preemptedPid, curr->remainingBT, curr->newPid);
+            Preemption *next = curr->next;
+            free(curr);
+            curr = next;
+        }
+        preemptInfo->first_preemption = NULL;
+    }
+    printf("Total Preemption : %d\n\n", preemption_count);
+}
 void printContextSwitchInfo() {
     printf("=======================================================================\n");
     printf("CONTEXT SWITCH INFORMATION\n");
@@ -177,13 +205,31 @@ void printStateTransitions(Process processes[]) {
         while (s != NULL) {
             printf("-> %s (t=%d) ", s->state, s->time_of_state);
             State *next = s->nextState;
-            free(s);
             s = next;
         }
         printf("\n");
         processes[i].states.nextState = NULL;
     }
     printf("\n");
+}
+
+void savePreemptInfo(LinkedList *preemptInfo, Process *oldProcess, Process *newProcess, int time) {
+    Preemption *new_preempt = malloc(sizeof(Preemption));
+    new_preempt->preemptedPid = oldProcess->pid;
+    new_preempt->remainingBT = oldProcess->remaining_time;
+    new_preempt->newPid = newProcess->pid;
+    new_preempt->preemptTime = time;
+    new_preempt->next = NULL;
+
+    Preemption *curr = preemptInfo->first_preemption;
+    if (curr != NULL) {
+        while (curr->next != NULL) {
+            curr = curr->next;
+        }
+        curr->next = new_preempt;
+    } else {
+        preemptInfo->first_preemption = new_preempt;
+    }
 }
 
 void saveState(Process *process, const char state_str[], int time) {
@@ -349,8 +395,9 @@ void print_util_throughput(Process p[], int n, int total_simulation_time, int cp
 
 
 
-void execution(Process processes[], int total_process, LinkedList* timeline){
+void execution(Process processes[], LinkedList *preempt_info, int total_process, LinkedList* timeline){
     LinkedList ready_queue;
+    preempt_info->first_preemption = NULL;
     ready_queue.head_node = NULL;
     ready_queue.head_timeline = NULL;
     ready_queue.tail_timeline = NULL;
@@ -408,6 +455,7 @@ void execution(Process processes[], int total_process, LinkedList* timeline){
             if (prev_process != NULL){
                 preemption_count++;
                 saveState(prev_process, waiting, time);
+                savePreemptInfo(preempt_info, prev_process, current_proccess, time);
                 // preem kalau sebelumnya bukan NULL atau sebelumnya proses yang sedang berjalan
                 // Dia akan NULL kalau di if pertama tadi masuk (process.remaining_time == 0)
             }
@@ -444,16 +492,19 @@ int main() {
     
     Process processes[processCount];
     LinkedList timeline;
+    LinkedList preempt_info;
+    preempt_info.first_preemption = NULL;
     timeline.head_timeline = NULL;
     timeline.tail_timeline = NULL;
     timeline.head_node = NULL;
     inputProcesses(processes);
 
-    execution(processes, processCount, &timeline); 
+    execution(processes, &preempt_info, processCount, &timeline); 
 
     calculate_process_metrics(processes, processCount);
 
     printGanttChart(&timeline);
+    printPreemptionInformation(&preempt_info);
     printSchedulingTable(processes, processCount);
     printContextSwitchInfo();
     printStateTransitions(processes);
