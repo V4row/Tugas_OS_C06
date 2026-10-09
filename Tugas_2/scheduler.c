@@ -587,6 +587,7 @@ void printStateTransitions(Process processes[]) {
         while (s != NULL) {
             printf("-> %s (t=%d) ", s->state, s->time_of_state);
             State *next = s->nextState;
+            free(s);
             s = next;
         }
         printf("\n");
