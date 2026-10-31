@@ -1,10 +1,53 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
 
+// ▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄    ▄▄▄▄▄▄▄▄▄▄▄▄▄▄ ▄▄▄▄▄▄▄▄▄            ▄▄▄▄▄▄▄▄▄▄▄▄    ▄▄▄▄▄▄▄▄▄    ▄▄▄▄▄▄    ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄       ▄▄▄▄▄▄▄▄▄▄▄▄    ▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄              ▄▄▄▄▄▄▄▄▄▄▄▄▄▄    ▄▄▄▄▄▄▄▄▄▄▄▄       ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+// ▄      ▓  ▄      █  ▄▀        ░ ░▒▓░ ▄       ▓     ░    ▄▀            ▀▄  ▄        ▀▄▄▀      ▀▄  ▄              ▀▄   ▄▀            ▀▄  ▄      ▓  ▄      █            ▄▀        ░ ░▒▓░  ▄▀            ▀▄   ▄▀         ░ ░▒▓░
+// █      ▒  ▒     ▒░ ▐▌            ░▒▒ █       ▒   ·░░░  ▐▌              ▐▌ █         ▐▌        ▐▌ █               ▐▌ ▐▌              ▐▌ █      ▒  ▒     ▒░           ▐▌            ░▒▒ ▐▌              ▐▌ ▐▌             ░▒▒
+// ▓      ░  ░     ░▒ █              ░▓ █       ░   ░▒▒░  ▓      █▀▀▒     ░█ ▓                   ░█ ▓      ▒▀▀░     ░▒ ▓      █▀▀▒     ░█ ▓      ░  ░     ░▒           █              ░▓ ▓      █▀▀▒     ░█ ▓               ░▓
+// ▒      █  █     ▐▌ ▓       ▄▄▄▄▄▄▄▄█ ▓       █   ░░░   ▒      █  ░      █ ▒      █▀█  ░▀▄      █ ▒      ░  ▒     ▐▌ ▒      █  ░      █ ▒      █  █     ▐▌           ▓       ▄▄▄▄▄▄▄▄█ ▒      █  ░      █ ▒       ▄▄▄▄▄▄▄▄▄█
+// ░      █▄▄█    ▄▀  ░       ▓▄▄▄▄ ·   ░       █    ░ ·  ░      █  █▄     █ ░      █ █┼┼▒ █    ┼┼█ ░      ▀▀▀▀   ▄▄▀  ░      █  █▄     █ ░      █▄▄█    ▄▀            ░       █     ·   ░      █  █▄     █ ░┼     █▄▄▄▄▄▄▄▄▄
+// █┼            ▒    █ ┼     ▄▄▄▄▒   · █ ┼     █       · █┼     █   ░    ┼░ █┼    ┼█ █┼┼▓ █    ┼┼█ █┼     ▒▀▀▀▀▀▀     █┼     █   ░    ┼░ █┼            ▒              █ ┼   ┼ █       · █┼     █   ░    ┼░ █┼      ▄▄▄┼┼  ┼░
+// █┼    ┼█▀▀█┼   ▀▄  █┼┼┼   ┼▓▄▄▄▄▄▄▄▄ █┼┼┼   ┼█▄▄▄▄▄▄▄▄ █┼┼┼┼ ┼█   ▒┼  ┼┼▒ █┼  ┼┼┼█ ▀▀▀▀ █┼  ┼┼┼█ █┼┼   ┼░    ░      █┼┼┼┼ ┼█   ▒┼  ┼┼▒ █┼    ┼█▀▀█┼   ▀▄            █┼┼┼ ┼┼┼█▄▄▄▄▄▄▄▄ █┼┼┼┼ ┼█   ▒┼  ┼┼▒ █┼┼   ┼█   ▒┼┼┼ ┼░
+// █┼┼  ┼┼░  █┼    ▐▌ █┼┼┼ ┼┼┼┼┼┼┼┼┼┼┼░ █┼┼┼ ┼┼┼┼┼┼┼┼┼┼┼░ █┼┼┼┼┼┼█   ▓┼┼ ┼┼▓ █┼┼┼┼┼┼░      █┼┼┼┼┼┼░ █┼┼┼┼┼┼░  ·░░░     █┼┼┼┼┼┼█   ▓┼┼ ┼┼▓ █┼┼  ┼┼░  █┼    ▐▌           █┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼░ █┼┼┼┼┼┼█   ▓┼┼ ┼┼▓ █┼┼┼ ┼┼┼▄▄▄█┼┼┼┼┼░
+// █┼┼┼┼┼┼▒  █┼┼┼ ┼┼▒ ▐▌┼┼┼┼┼┼┼┼┼┼┼┼┼┼▒ ▐▌┼┼┼┼┼┼┼┼┼┼┼┼┼┼▒ ▐▌┼┼┼┼┼█▄▄▄▀┼┼┼┼▐▌ █┼┼┼┼┼┼▒      █┼┼┼ ┼┼▒ █┼┼┼┼┼┼▒  ░▒▒░     ▐▌┼┼┼┼┼█▄▄▄▀┼┼┼┼▐▌ █┼┼┼┼┼┼▒  █┼┼┼ ┼┼▒           ▐▌┼┼┼┼┼┼┼┼┼┼┼┼┼┼▒ ▐▌┼┼┼┼┼█▄▄▄▀┼┼┼┼▐▌ ▐▌┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼▒
+// █┼┼┼┼┼┼▓  █┼┼┼┼┼┼▓ ·▀▄┼┼┼┼┼┼┼┼┼┼┼┼┼▓ ·▀▄┼┼┼┼┼┼┼┼┼┼┼┼┼▓  ▀▄┼┼┼┼┼┼┼┼┼┼┼┼▄▀  █┼┼┼┼┼┼▓      █┼┼┼┼┼┼▓ █┼┼┼┼┼┼▓  ░░░       ▀▄┼┼┼┼┼┼┼┼┼┼┼┼▄▀  █┼┼┼┼┼┼▓  █┼┼┼┼┼┼▓           ·▀▄┼┼┼┼┼┼┼┼┼┼┼┼┼▓  ▀▄┼┼┼┼┼┼┼┼┼┼┼┼▄▀   ▀▄┼┼┼┼┼┼┼┼┼┼┼┼┼┼▓
+// ▀▀▀▀▀▀▀▀  ▀▀▀▀▀▀▀▀    ▀▀▀▀▀▀▀▀▀▀▀▀▀▀    ▀▀▀▀▀▀▀▀▀▀▀▀▀▀    ▀▀▀▀▀▀▀▀▀▀▀▀    ▀▀▀▀▀▀▀▀      ▀▀▀▀▀▀▀▀ ▀▀▀▀▀▀▀▀   ░ ·        ▀▀▀▀▀▀▀▀▀▀▀▀    ▀▀▀▀▀▀▀▀  ▀▀▀▀▀▀▀▀              ▀▀▀▀▀▀▀▀▀▀▀▀▀▀    ▀▀▀▀▀▀▀▀▀▀▀▀       ▀▀▀▀▀▀▀▀▀▀▀▀▀▀ 
+
+//|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|
+//|-----------------------------STRUKTUR-------------------------------|
+//|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|
+
+
+//====================================================================
+//>>>>>>>>>>>>>>>>>>>>>>>>>>>> Velicia  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+typedef struct State {
+    char state[12];
+    struct State *nextState;
+    int time_of_state;
+} State;
+
+typedef struct Preemption {
+    struct Preemption *next;
+    int preemptedPid;
+    int remainingBT;
+    int newPid;
+    int preemptTime;
+} Preemption;
+
+//>>>>>>>>>>>>>>>>>>>>>>>>>>>> Velicia <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//====================================================================
+
+//====================================================================
+//>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Vebian <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 typedef struct Process {
+    State states;
     int pid;
     int arrival_time;
     int burst_time;
+    int remaining_time;
     int completion_time;
     int turnaround_time;
     int waiting_time;
@@ -13,85 +56,576 @@ typedef struct Process {
 } Process;
 
 typedef struct Node {
-    int pid;
+    Process *process;
     struct Node *next;
 } Node;
 
-typedef struct Linkedlist{
-    Node *head;
-} Linkedlist;
+typedef struct executionTimeline{
+    int pid;
+    int end;
+    struct executionTimeline *next;
+} executionTimeline;
 
-void count_turnaround_time(Process* process){
+typedef struct LinkedList{
+    executionTimeline *head_timeline;
+    executionTimeline *tail_timeline;
+    Node *head_node;
+    Preemption *first_preemption;
+} LinkedList;
+
+//>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Vebian <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//====================================================================
+
+
+//|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|
+//|-------------------------Global Variable----------------------------|
+//|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|
+
+const char ready[] = "READY";
+const char running[] = "RUNNING";
+const char waiting[] = "WAITING"; // Proses yang di-preempt akan kembali ke state READY, bukan WAITING seperti pada contoh output soal
+const char terminated[] = "TERMINATED";
+int processCount;
+int time = 0;
+int cpu_time = 0;
+int context_switch_count = 0;
+int preemption_count = 0;
+
+//|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|
+//|--------------------------Logic Function----------------------------|
+//|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|
+
+//====================================================================
+//>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Rafa <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+void inputProcesses(Process processes[]) {
+    for (int i = 0; i < processCount; i++) {
+        processes[i].pid = i + 1;
+
+        printf("P%d - masukkan Arrival Time dan Burst Time: ", processes[i].pid);
+        scanf("%d %d", &processes[i].arrival_time, &processes[i].burst_time);
+
+        processes[i].remaining_time = processes[i].burst_time;
+        processes[i].completion_time = 0;
+        processes[i].turnaround_time = 0;
+        processes[i].waiting_time = 0;
+        processes[i].response_time = 0;
+        processes[i].first_start_time = -1;
+
+        processes[i].states.nextState = NULL;
+    }
+}
+//>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Rafa <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//====================================================================
+
+//====================================================================
+//>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Vebian <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+void newTimeline(LinkedList* timeline, int pid, int end) {
+    // Membuat timeline baru
+    executionTimeline *new_timeline = malloc(sizeof(executionTimeline));
+    new_timeline->pid = pid;
+    new_timeline->end = end;
+    new_timeline->next = NULL;
+
+    // Kalau masih kosong langsung buat sebagai head/timeline pertama dan tail
+    if (timeline->head_timeline == NULL){
+        timeline->head_timeline = new_timeline;
+        timeline->tail_timeline = new_timeline;
+        return;
+    } 
+
+    // Kalau tidak tambah dibagian terakhir 
+    timeline->tail_timeline->next = new_timeline;
+    timeline->tail_timeline= new_timeline;
+}
+
+void addTimeline(LinkedList* timeline, int pid, int end) {
+    // Catat setiap time++, jadi endnya akan terus bertambah sampai jika pid masih sama
+    if (timeline->tail_timeline != NULL && timeline->tail_timeline->pid == pid) {
+        timeline->tail_timeline->end = end + 1; //Ternyata harus +1 biar sesuai di contoh
+        return;
+    }
+    newTimeline(timeline, pid, end + 1);
+}
+
+
+void countTurnaroundTime(Process* process){
     process->turnaround_time = process->completion_time - process->arrival_time;
 }
 
-void count_waiting_time(Process* process){
+void countWaitingTime(Process* process){
     process->waiting_time = process->turnaround_time - process->burst_time;
 }
 
-void count_response_time(Process* process){
+void countResponseTime(Process* process){
     process->response_time = process->first_start_time - process->arrival_time;
 }
 
+//>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Vebian <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//====================================================================
 
 
-Process* find_process_by_pid(Process processes[], int pid_target, int len) {
-    for (int i = 0; i < len; i++){
-        if (processes[i].pid == pid_target) {
-            return &processes[i];
+
+//====================================================================
+//>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Ali <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+void calculate_process_metrics(Process p[], int n){
+    for(int i=0;i<n;i++){
+        countTurnaroundTime(&p[i]);
+        countWaitingTime(&p[i]);
+        countResponseTime(&p[i]);
+		// p[i].turnaround_time = p[i].completion_time - p[i].arrival_time;
+		// p[i].waiting_time =  p[i].turnaround_time - p[i].burst_time;
+		// p[i].response_time = p[i].first_start_time - p[i].arrival_time;
+        
+	}
+}
+//>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Ali <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//====================================================================
+
+
+
+//====================================================================
+//>>>>>>>>>>>>>>>>>>>>>>>>>>>> Velicia <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+void savePreemptInfo(LinkedList *preemptInfo, Process *oldProcess, Process *newProcess, int time) {
+    Preemption *new_preempt = malloc(sizeof(Preemption));
+    new_preempt->preemptedPid = oldProcess->pid;
+    new_preempt->remainingBT = oldProcess->remaining_time;
+    new_preempt->newPid = newProcess->pid;
+    new_preempt->preemptTime = time;
+    new_preempt->next = NULL;
+
+    Preemption *curr = preemptInfo->first_preemption;
+    if (curr != NULL) {
+        while (curr->next != NULL) {
+            curr = curr->next;
+        }
+        curr->next = new_preempt;
+    } else {
+        preemptInfo->first_preemption = new_preempt;
+    }
+}
+
+void saveState(Process *process, const char state_str[], int time) {
+    // Inisiasi objek State baru
+    // Memory akan di-free setelah state di-print
+    State *new_state = malloc(sizeof(State));
+    
+    // Menyalin nilai state_str ke state pada new_state
+    strncpy(new_state->state, state_str, sizeof(new_state->state) - 1);
+    new_state->state[sizeof(new_state->state) - 1] = '\0';
+
+    // Menyatakan bahwa state terjadi pada waktu time
+    new_state->time_of_state = time;
+
+    new_state->nextState = NULL;
+    
+    // Looping sampai ketemu state terakhir
+    State *curr_state = &process->states;
+    if (curr_state != NULL) {
+        while (curr_state->nextState != NULL) {
+            curr_state = curr_state->nextState;
+        }
+        // Letakkan state baru setelah state terakhir
+        curr_state->nextState = new_state;
+    }
+}
+
+//>>>>>>>>>>>>>>>>>>>>>>>>>>>> Velicia <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//====================================================================
+
+
+//====================================================================
+//>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Vebian <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+void addQueue(LinkedList *ready_queue, Process *process, LinkedList *timeline){
+    Node *new_process_node = malloc(sizeof(Node));
+    new_process_node->process = process;
+    new_process_node->next = NULL;
+    saveState(process, ready, time);
+    //masih kosong 
+    if (ready_queue->head_node == NULL){
+        ready_queue->head_node = new_process_node;
+        return;
+    }
+    //ready_queue lebih kecil dari head_node (preemp)
+    if (new_process_node->process->remaining_time < ready_queue->head_node->process->remaining_time) {
+        // newTimeline(timeline, ready_queue->head_node->process->pid, time);
+        new_process_node->next = ready_queue->head_node;
+        ready_queue->head_node = new_process_node;
+        return;
+    }
+
+    //tidak kosong ready_queuenya, current akan terus maju sampai ujung atau lebih kecil
+    Node *current = ready_queue->head_node;
+    while (current->next != NULL && current->next->process->remaining_time <= new_process_node->process->remaining_time){
+        current = current->next;
+    }
+    new_process_node->next = current->next;   
+    current->next = new_process_node;
+}
+
+void addProcessAtTime(Process processes[], int total_process, LinkedList *ready_queue, LinkedList* timeline){
+    for (int i = 0; i < total_process; i++){
+        if (processes[i].arrival_time == time){
+            addQueue(ready_queue, &processes[i], timeline);
         }
     }
-    return NULL;
 }
 
-int execution(Process processes[]){
-    int time = 0;
-    Linkedlist queue;
+void removeHeadNode(LinkedList *ready_queue){
+    Node *process_node = ready_queue->head_node;
+    ready_queue->head_node = process_node->next;
+    free(process_node);
 }
+
+bool checkProcessArrival(Process processes[], int total_process){
+    for (int i = 0; i < total_process; i++){
+        if (processes[i].arrival_time == time){
+            return true;
+        }
+    }
+    return false;
+}
+
+//>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Vebian <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//====================================================================
+
+//|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|
+//|----------------------- Execution Progress -------------------------|
+//|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|
+
+//====================================================================
+//>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Vebian <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+void execution(Process processes[], LinkedList *preempt_info, int total_process, LinkedList* timeline){
+    LinkedList ready_queue;
+    preempt_info->first_preemption = NULL;
+    ready_queue.head_node = NULL;
+    ready_queue.head_timeline = NULL;
+    ready_queue.tail_timeline = NULL;
+    ready_queue.first_preemption = NULL;
+
+    Process *current_proccess = NULL; // Proses yang sedang berjalan
+    Process *last_process = NULL; // Proses yang sebelumnya berjalan
+    Process *prev_process = NULL; // Proses yang sebelumnya berjalan (khusus premp)
+
+    int completed_process = 0; 
+
+    while (completed_process < total_process) {
+        if (ready_queue.head_node != NULL){
+            Process *head_node_process = ready_queue.head_node->process;
+            // Jika proses selesai
+            if (head_node_process->remaining_time == 0){
+                head_node_process->completion_time = time;
+                saveState(head_node_process, terminated, time);
+                removeHeadNode(&ready_queue);      
+                completed_process++;
+                prev_process = NULL;             // preemp tidak dihitung jika head_nodenya sudah habis sendiri
+            }
+        }   
+        
+        // biar tidak print IDLE diakhir
+        if (completed_process == total_process) {
+            break;
+        }
+        
+
+        if (checkProcessArrival(processes, total_process)){
+            addProcessAtTime(processes, total_process, &ready_queue, timeline);
+        }
+
+        
+        //kalau masih kosong ready_queuenya lanjut ke time berikutnya
+        if (ready_queue.head_node == NULL){ 
+            //pid 0 anggapannya process yang belum ada (IDLE)
+            //IDLE biar pas juga, kita kan formatnya PXXX :v
+            addTimeline(timeline, 0, time);
+            prev_process = NULL;
+            last_process = NULL;
+            time++;
+            continue;
+        }
+
+        // Menjalankan proses yang ada di head
+
+        current_proccess = ready_queue.head_node->process;
+        if (current_proccess != last_process){ 
+            //cek preemp
+            if (prev_process != NULL){
+                preemption_count++;
+                saveState(prev_process, ready, time);
+                savePreemptInfo(preempt_info, prev_process, current_proccess, time);
+                // preem kalau sebelumnya bukan NULL atau sebelumnya proses yang sedang berjalan
+                // Dia akan NULL kalau di if pertama tadi masuk (process.remaining_time == 0)
+            }
+
+            // cek context switch, bukan context swict jika diawal atau baru masuk
+            if (last_process != NULL){
+                context_switch_count++;
+            }
+
+            if (current_proccess->first_start_time == -1){
+                current_proccess->first_start_time = time; // catat pertama kali dimulai
+            }
+            saveState(current_proccess, running, time);
+        }
+
+        prev_process = current_proccess;
+        last_process = current_proccess;
+
+        //kurangi remaining time
+        current_proccess->remaining_time--;
+        //waktu cpu terpakai bertambah
+        cpu_time++;
+
+        //lanjut time berikutnya
+        addTimeline(timeline, current_proccess->pid, time);
+        time++;
+    }
+}
+
+//>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Vebian <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//====================================================================
+
+
+//|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|
+//|------------------------- Print Output -----------------------------|
+//|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|
+
+
+
+//====================================================================
+//>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Rafa <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+void printProcessInput(Process processes[]) {
+    printf("\n=======================================================================\n");
+    printf("PROCESS INPUT\n");
+    printf("=======================================================================\n");
+    printf("PID\tArrival Time\tBurst Time\n");
+    
+    for (int i = 0; i < processCount; i++) {
+        printf("P%-9d %-15d %-15d\n", 
+            processes[i].pid, 
+            processes[i].arrival_time, 
+            processes[i].burst_time);
+    }
+    printf("=======================================================================\n\n");
+}
+
+//>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Rafa <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//====================================================================
+
+//====================================================================
+//>>>>>>>>>>>>>>>>>>>>>>>>> Vebian & Rafa <<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    
+void printGanttChart(LinkedList* timeline) {
+    printf("\n=======================================================================\n");
+    printf("CPU EXECUTION TIMELINE (GANTT CHART)\n");
+    printf("=======================================================================\n");
+
+    // print gantt chart buat yang | P1 | P2 | P3 | P2 | P1 |
+    executionTimeline *current = timeline->head_timeline;
+    while (current != NULL) {
+        // kalau ternyata tidak ada proses masuk diawal
+         if (current->pid == 0) {
+            printf("| IDLE ");
+        } else {
+            printf("| P%-4d", current->pid);
+        }
+        current = current->next;
+    }
+    printf("|\n");
+    
+    // print gantt chart buat yang 0    3    5    7    8    13
+    current = timeline->head_timeline;
+    printf("%-7d", 0);
+    while (current != NULL) {
+        executionTimeline *next = current->next;
+        if (next == NULL) {
+            printf("%d\n", current->end);
+        } else {
+            printf("%-7d", current->end);
+        }
+        free(current);
+        current = next;
+    }
+    //kosongi
+    timeline->head_timeline = NULL;
+    timeline->tail_timeline = NULL;
+    printf("\n");
+}
+//>>>>>>>>>>>>>>>>>>>>>>>>> Vebian & Rafa <<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//====================================================================
+
+
+//====================================================================
+//>>>>>>>>>>>>>>>>>>>>>>>>>>>> Velicia <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+void printPreemptionInformation(LinkedList *preemptInfo) {
+    printf("=======================================================================\n");
+    printf("PREEMPTION INFORMATION\n");
+    printf("=======================================================================\n");
+
+    if (preemption_count == 0) {
+        printf("Tidak ada preemption.\n");
+    } else {
+        Preemption *curr = preemptInfo->first_preemption;
+        while (curr != NULL) {
+            printf("t=%d : P%d PREEMPTED (sisa BT=%d) -> P%d RUNNING\n", curr->preemptTime, curr->preemptedPid, curr->remainingBT, curr->newPid);
+            Preemption *next = curr->next;
+            free(curr);
+            curr = next;
+        }
+        preemptInfo->first_preemption = NULL;
+    }
+    printf("Total Preemption : %d\n\n", preemption_count);
+}
+
+//>>>>>>>>>>>>>>>>>>>>>>>>>>>> Velicia <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//====================================================================
+
+
+
+//====================================================================
+//>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Vebian <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+void printSchedulingTable(Process processes[], int total_process) {
+    printf("=======================================================================\n");
+    printf("SCHEDULING TABLE\n");
+    printf("=======================================================================\n");
+    printf("%-6s%-6s%-6s%-6s%-6s%-6s%-6s\n", "PID", "AT", "BT", "CT", "TAT", "WT", "RT");
+    printf("-----------------------------------------------------------------------\n");
+    for (int i = 0; i < total_process; i++) {
+        printf("P%-5d%-6d%-6d%-6d%-6d%-6d%-6d\n",
+            processes[i].pid,
+            processes[i].arrival_time,
+            processes[i].burst_time,
+            processes[i].completion_time,
+            processes[i].turnaround_time,
+            processes[i].waiting_time,
+            processes[i].response_time);
+    }
+    printf("=======================================================================\n\n");
+}
+//>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Vebian <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//====================================================================
+
+
+//====================================================================
+//>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Ali <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+void printPerformance(Process p[], int n){
+	double total_wt = 0.0;
+	double total_tat = 0.0;
+	double total_rt = 0.0;
+	for(int i=0;i<n;i++){
+		total_wt += p[i].waiting_time;
+		total_tat += p[i].turnaround_time;
+		total_rt += p[i].response_time;
+	}
+	double avg_wt = total_wt/n;
+	double avg_tat = total_tat/n;
+	double avg_rt = total_rt/n;
+
+	printf("=======================================================================\n");
+	printf("SCHEDULING PERFORMANCE\n");
+	printf("=======================================================================\n");
+	printf("Average Waiting Time	: %.2f\n", avg_wt);
+	printf("Average Turnaround Time	: %.2f\n", avg_tat);
+	printf("Average Response TIme	: %.2f\n", avg_rt);
+	printf("=======================================================================\n\n");
+
+}
+
+void printUtilThroughput(Process p[], int total_process, int total_simulation_time, int cpu_busy_time){
+	double cpu_utilization = 0.0;
+	double throughput = 0.0;
+
+	if(total_simulation_time > 0){
+		cpu_utilization = ((double)cpu_busy_time / total_simulation_time) * 100.0;
+		throughput = (double)total_process / total_simulation_time;
+	}
+	printf("=======================================================================\n");
+	printf("CPU Utilization and Throughput\n");
+	printf("=======================================================================\n");
+	printf("CPU Utilization	: %.2f%%\n", cpu_utilization);
+	printf("Throughput	: %.2f process/time unit\n", throughput);
+	printf("=======================================================================\n\n");
+
+}
+
+//>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Ali <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//====================================================================
+
+
+//====================================================================
+//>>>>>>>>>>>>>>>>>>>>>>>>>>>> Velicia <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+void printContextSwitchInfo() {
+    printf("=======================================================================\n");
+    printf("CONTEXT SWITCH INFORMATION\n");
+    printf("=======================================================================\n");
+
+    printf("Total Context Switch: %d\n\n", context_switch_count);
+}
+
+void printStateTransitions(Process processes[]) {
+    printf("=======================================================================\n");
+    printf("PROCESS STATE TRANSITIONS\n");
+    printf("=======================================================================\n");
+
+    // Loop setiap proses dan print perubahan statenya
+    for (int i = 0; i < processCount; i++) {
+        State *s = processes[i].states.nextState;
+        printf("P%d : NEW ", processes[i].pid);
+        while (s != NULL) {
+            printf("-> %s (t=%d) ", s->state, s->time_of_state);
+            State *next = s->nextState;
+            free(s);
+            s = next;
+        }
+        printf("\n");
+        processes[i].states.nextState = NULL;
+    }
+    printf("\n");
+}
+
+//>>>>>>>>>>>>>>>>>>>>>>>>>>>> Velicia <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//====================================================================
+
+//|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|
+//|---------------------------- MAIN ----------------------------------|
+//|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|
 
 int main() {
-    int len;
-    // scanf("%d", &len);
-    // printf("%d", len);
-    len = 4;
-    Process processes[len];
-    processes[0].pid = 1;
-    processes[0].arrival_time = 0;
-    processes[0].burst_time = 8;
-    processes[1].pid = 2;
-    processes[1].arrival_time = 4;
-    processes[1].burst_time = 1;
-    processes[2].pid = 3;
-    processes[2].arrival_time = 2;
-    processes[2].burst_time = 2;
-    processes[3].pid = 4;
-    processes[3].arrival_time = 5;
-    processes[3].burst_time = 3;
+    printf("Masukkan banyaknya process: ");
+    scanf("%d", &processCount); 
     
-    execution(processes);
-    // for (int i = 0; i < len; i++){
-    //     processes[i].pid = i;
-    //     processes[i].burst_time = i+1;
-    // }
-
-
-    int x = 3;
-    int *ptr = &x;
     
-    printf("%d\n", *ptr);
-    printf("%p\n", ptr);
-    // Process p = {1,2,3,4,5,6,7,8};
-    Process p;
-    p.arrival_time = 4;
-    Process *p_ptr = &p;
+    Process processes[processCount];
+    LinkedList preempt_info = {NULL, NULL, NULL, NULL};
+    LinkedList timeline;
+    preempt_info.first_preemption = NULL;
+    timeline.head_timeline = NULL;
+    timeline.tail_timeline = NULL;
+    timeline.head_node = NULL;
+    timeline.first_preemption = NULL;
+    inputProcesses(processes);
+    printProcessInput(processes);
 
+    execution(processes, &preempt_info, processCount, &timeline); 
 
-    printf("%d\n", p.arrival_time);
-    printf("%d\n", p_ptr->arrival_time);
-    printf("%p\n", p_ptr);
+    calculate_process_metrics(processes, processCount);
 
-
-    printf("%d\n", processes[2].pid);
+    printGanttChart(&timeline);
+    printPreemptionInformation(&preempt_info);
+    printSchedulingTable(processes, processCount);
+    printPerformance(processes, processCount);
+    printUtilThroughput(processes, processCount ,time, cpu_time);
+    printContextSwitchInfo();
+    printStateTransitions(processes);
 
     return 0;
 }
