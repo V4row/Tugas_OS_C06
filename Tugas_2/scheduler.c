@@ -260,7 +260,7 @@ void addQueue(LinkedList *ready_queue, Process *process, LinkedList *timeline){
     //tidak kosong ready_queuenya, current akan terus maju sampai ujung atau lebih kecil
     Node *current = ready_queue->head_node;
     while (current->next != NULL && current->next->process->remaining_time <= new_process_node->process->remaining_time){
-        current = current->next; //catat context swict harusnya catat context swicth dan preemp juga kalau terganti di head_node TODO
+        current = current->next;
     }
     new_process_node->next = current->next;   
     current->next = new_process_node;
@@ -307,14 +307,12 @@ void execution(Process processes[], LinkedList *preempt_info, int total_process,
     ready_queue.tail_timeline = NULL;
     ready_queue.first_preemption = NULL;
 
-    // int current_proccess = -1; //melihat pidnya
     Process *current_proccess = NULL; // Proses yang sedang berjalan
     Process *last_process = NULL; // Proses yang sebelumnya berjalan
     Process *prev_process = NULL; // Proses yang sebelumnya berjalan (khusus premp)
 
     int completed_process = 0; 
 
-    // printf("Rafael");
     while (completed_process < total_process) {
         if (ready_queue.head_node != NULL){
             Process *head_node_process = ready_queue.head_node->process;
@@ -341,8 +339,6 @@ void execution(Process processes[], LinkedList *preempt_info, int total_process,
         
         //kalau masih kosong ready_queuenya lanjut ke time berikutnya
         if (ready_queue.head_node == NULL){ 
-            // printf("Waktu ke: %d\n", time);
-            // printf("PID : P%d\n\n", ready_queue.head_node->process->pid);
             //pid 0 anggapannya process yang belum ada (IDLE)
             //IDLE biar pas juga, kita kan formatnya PXXX :v
             addTimeline(timeline, 0, time);
