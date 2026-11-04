@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include "malloc_free.h"
 
 
 // ====== Tempat buat fungsi ======
@@ -23,6 +24,8 @@ int main(){
 
         case 2:
             /* allocate mmap */
+            print_malloc_free_output(12341234);
+            running = false;
             break;
 
         case 3:
