@@ -4,7 +4,39 @@
 
 
 // ====== Tempat buat fungsi ======
+long get_vmrss_kb() {
+    FILE *file = fopen("/proc/self/status", "r");
+    if (!file) return -1;
+    
+    // Mencari baris VmRSS lalu mengambil nilainya
+    char line[128];
+    long vmrss = 0;
+    while (fgets(line, sizeof(line), file)) {
+        if (strncmp(line, "VmRSS:", 6) == 0) {
+            sscanf(line + 6, "%ld", &vmrss);
+            break;
+        }
+    }
+    fclose(file);
+    return vmrss;
+}
 
+long get_vmsize_kb() {
+    FILE *file = fopen("/proc/self/status", "r");
+    if (!file) return -1;
+    
+    char line[128];
+    long vmsize = 0;
+    while (fgets(line, sizeof(line), file)) {
+        // Mencari string "VmSize:"
+        if (strncmp(line, "VmSize:", 7) == 0) {
+            sscanf(line + 7, "%ld", &vmsize);
+            break;
+        }
+    }
+    fclose(file);
+    return vmsize;
+}
 
 // ====== Tempat buat fungsi ======
 
