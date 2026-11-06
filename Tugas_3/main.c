@@ -24,7 +24,14 @@ int main(){
 
         case 2:
             /* allocate mmap */
-            print_malloc_free_output(12341234);
+            int allocation_ammount;
+            printf("You picked malloc/free\n");
+            // TODO: print VmSize & VmRSS
+            printf("How many integers to allocate: ");
+            scanf("%d", &allocation_ammount);
+            printf("\n");
+            print_malloc_free_output(allocation_ammount);
+            // TODO: print VmSize & VmRSS
             running = false;
             break;
 
