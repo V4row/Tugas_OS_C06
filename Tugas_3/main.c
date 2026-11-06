@@ -1,10 +1,67 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <stdbool.h>
-#include "malloc_free.h"
+#include <time.h>
+#include <unistd.h>
+#include <fcntl.h>
+
+#define BUFFER_SIZE 4096
 
 
 // ====== Tempat buat fungsi ======
+
+void print_malloc_free_output(int numOfInts) {
+    // Membuat timestamp untuk nama file
+    time_t now = time(NULL);
+    struct tm *t = localtime(&now);
+    char stdLibName[100];
+    char sysCallName[100];
+    strftime(stdLibName, sizeof(stdLibName), "C6-malloc_std-%d-%m-%Y_%H:%M:%S.txt", t);
+    strftime(sysCallName, sizeof(sysCallName), "C6-malloc_sys-%d-%m-%Y_%H:%M:%S.txt", t);
+    
+    // Menjalankan logika malloc/free serta mencetak output ke terminal
+    // Output dicetak ke file dengan menggunakan Standard C Library
+    FILE *file = fopen(stdLibName, "w+");
+    fprintf(file, "You picked malloc/free\n");
+    // Print VmSize & VmRSS ke terminal dan file log
+    printf("VmSize Before: %ld KB | VmRSS Before: %ld KB\n", get_vmsize_kb(), get_vmrss_kb());
+    fprintf(file, "VmSize Before: %ld KB | VmRSS Before: %ld KB\n\n", get_vmsize_kb(), get_vmrss_kb());
+    int *integers = malloc(numOfInts * sizeof(int));
+    // Isi 10 nilai terakhir saja
+    for (int i = 1; i <= 10; i++) {
+        integers[numOfInts-i] = numOfInts - (i-1);
+    }
+    // Print output
+    printf("Starting memory address: %p\n", integers);
+    fprintf(file, "Starting memory address: %p\n", integers);
+    printf("Printing first 10 values in reverse order: \n");
+    fprintf(file, "Printing first 10 values in reverse order: \n");
+    for (int i = 1; i <= 10; i++) {
+        printf("%d\n", integers[numOfInts-i]);
+        fprintf(file, "%d\n", integers[numOfInts-i]);
+    }
+    // Print VmSize & VmRSS ke terminal dan file log
+    printf("\nVmSize After: %ld KB | VmRSS After: %ld KB\n", get_vmsize_kb(), get_vmrss_kb());
+    fprintf(file, "\nVmSize After: %ld KB | VmRSS After: %ld KB\n", get_vmsize_kb(), get_vmrss_kb());
+
+    free(integers);
+    fclose(file);
+
+    // Menyalin isi file C6-malloc_std-[timestamp].txt ke file C6-malloc_sys-[timestamp].txt
+    file = fopen(stdLibName, "r");
+    char buffer[BUFFER_SIZE];
+    int fileSys = open(sysCallName, O_WRONLY | O_CREAT, 0666);
+    size_t bytes_read;
+    ssize_t bytes_written;
+    while ((bytes_read = fread(buffer, 1, BUFFER_SIZE, file)) > 0) {
+        bytes_written = write(fileSys, buffer, bytes_read);
+    }
+    fclose(file);
+    close(fileSys);
+}
+
+
 long get_vmrss_kb() {
     FILE *file = fopen("/proc/self/status", "r");
     if (!file) return -1;
@@ -44,6 +101,7 @@ long get_vmsize_kb() {
 int main(){
     int option;
     bool running = true;
+    printf("Masukkan pilihan (ketik '2' untuk malloc/free): ");
     scanf("%d",&option);
 
     while(running){
@@ -58,12 +116,10 @@ int main(){
             /* allocate mmap */
             int allocation_ammount;
             printf("You picked malloc/free\n");
-            // TODO: print VmSize & VmRSS
             printf("How many integers to allocate: ");
             scanf("%d", &allocation_ammount);
             printf("\n");
             print_malloc_free_output(allocation_ammount);
-            // TODO: print VmSize & VmRSS
             running = false;
             break;
 
@@ -76,7 +132,7 @@ int main(){
             break;
         
         default:
-            printf("Tdak valid!");
+            printf("Tidak valid!");
             break;
         }
     }
