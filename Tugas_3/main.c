@@ -7,7 +7,11 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/mman.h>
+<<<<<<< Updated upstream
 #include "banner.h"
+=======
+#include "banner.h" //ini biar bisa option
+>>>>>>> Stashed changes
 
 #define BUFFER_SIZE 4096
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
@@ -83,6 +87,76 @@ void write_log_sys(const char *filename, const char *content) {
     close(fd);
 }
 
+<<<<<<< Updated upstream
+=======
+void copy_std_to_sys(char *stdLib, char *sysCall){
+    FILE *file = fopen(stdLib, "r");
+    char buffer[BUFFER_SIZE];
+    int fileSys = open(sysCall, O_WRONLY | O_CREAT, 0666);
+    size_t bytes_read;
+    ssize_t bytes_written;
+    while ((bytes_read = fread(buffer, 1, BUFFER_SIZE, file)) > 0) {
+        bytes_written = write(fileSys, buffer, bytes_read);
+    }
+    fclose(file);
+    close(fileSys);
+}
+void print_mmap_munmap_output(int numOfInts){
+    long vmSizeBefore = get_vmsize_kb();
+    long vmRssBefore = get_vmrss_kb();
+    size_t bytes_to_allocate = numOfInts * sizeof(int);
+
+    int *integers = mmap(NULL, bytes_to_allocate, PROT_READ | PROT_WRITE,
+                    MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if(integers == MAP_FAILED){
+        perror("[ERROR] Gagal melakukan alokasi memori dengan mmap");
+        return;
+    }
+    char stdLibName[128];
+    char sysCallName[128];
+    generate_log_filenames("mmap", stdLibName, sysCallName, sizeof(stdLibName));
+
+    FILE *file = fopen(stdLibName, "w+");
+    if (!file){
+        perror("[ERROR] Gagal membuat berkas log std");
+        munmap(integers, bytes_to_allocate);
+        return;
+    }
+    fprintf(file, "You picked mmap/munmap.\n");
+    printf("VmSize Before: %ld KB | VmRSS Before: %ld KB\n\n", vmSizeBefore, vmRssBefore);
+    fprintf(file, "VmSize Before: %ld KB | VmRSS Before: %ld KB\n\n", vmSizeBefore, vmRssBefore);
+
+    // Mengisi array integer
+    for (int i = 1; i <= numOfInts; i++) {
+        integers[numOfInts - i] = numOfInts - (i - 1);
+    }
+
+    int showAmount = MIN(10, numOfInts);
+    printf("Starting memory address: %p\n", (void *)integers);
+    fprintf(file, "Starting memory address: %p\n", (void *)integers);
+    printf("Printing first %d values in reverse order:\n", showAmount);
+    fprintf(file, "Printing first %d values in reverse order:\n", showAmount);
+
+    for (int i = 1; i <= showAmount; i++) {
+        printf("%d\n", integers[numOfInts - i]);
+        fprintf(file, "%d\n", integers[numOfInts - i]);
+    }
+
+    long vmSizeAfter = get_vmsize_kb();
+    long vmRssAfter = get_vmrss_kb();
+
+    printf("\nVmSize After: %ld KB | VmRSS After: %ld KB\n\n", vmSizeAfter, vmRssAfter);
+    fprintf(file, "\nVmSize After: %ld KB | VmRSS After: %ld KB\n", vmSizeAfter, vmRssAfter);
+
+    // Bebaskan memori fisik dan alamat virtual ke kernel dengan munmap
+    munmap(integers, bytes_to_allocate);
+    fclose(file);
+
+    // Salin isi berkas log std ke log sys via System Call (Bagian 3)
+    copy_std_to_sys(stdLibName, sysCallName);
+}
+
+>>>>>>> Stashed changes
 // ===== Velicia ====
 void print_malloc_free_output(int numOfInts) {
     // Catat VmSize dan VmRSS sebelum allocate memori
@@ -379,11 +453,14 @@ int main(){
                 
                 case 2:
                 /* code */
-                printf("\n--- Varian 6: mmap Threshold ---\n");
-                printf("M_MMAP_THRESHOLD = 128 KB\n\n");
-                printf("Ukuran     Delta brk     Alamat           Ujung brk        Hasil\n");
-                varian_6_with_log();
-                break;
+                    int allocation_amount;
+                    printf("\nYou picked mmap/munmap\n");
+                    printf("How many integers to allocate: ");
+                    if (scanf("%d", &allocation_amount) == 1) {
+                        printf("\n");
+                        print_mmap_munmap_output(allocation_amount);
+                    }
+                    break;
             
             default:
                 printf("Pilihan tidak valid!\n");
