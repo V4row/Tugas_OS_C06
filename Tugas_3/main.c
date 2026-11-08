@@ -7,11 +7,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/mman.h>
-<<<<<<< Updated upstream
 #include "banner.h"
-=======
-#include "banner.h" //ini biar bisa option
->>>>>>> Stashed changes
 
 #define BUFFER_SIZE 4096
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
