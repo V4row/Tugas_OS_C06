@@ -9,6 +9,7 @@
 #include <sys/mman.h>
 
 #define BUFFER_SIZE 4096
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
 
 
 // ====== Tempat buat fungsi ======
@@ -61,6 +62,14 @@ void copy_std_to_sys(char *stdLib, char *sysCall){
 
 // ===== Velicia ====
 void print_malloc_free_output(int numOfInts) {
+    // Allocate ke memory dengan malloc
+    int *integers = malloc(numOfInts * sizeof(int));
+
+    if (integers == NULL) {
+        printf("Gagal melakukan alokasi memori dengan malloc.\n");
+        return;
+    }
+
     // Membuat timestamp untuk nama file
     time_t now = time(NULL);
     struct tm *t = localtime(&now);
@@ -74,24 +83,26 @@ void print_malloc_free_output(int numOfInts) {
     FILE *file = fopen(stdLibName, "w+");
     fprintf(file, "You picked malloc/free\n");
     // Print VmSize & VmRSS ke terminal dan file log
-    printf("VmSize Before: %ld KB | VmRSS Before: %ld KB\n", get_vmsize_kb(), get_vmrss_kb());
+    printf("VmSize Before: %ld KB | VmRSS Before: %ld KB\n\n", get_vmsize_kb(), get_vmrss_kb());
     fprintf(file, "VmSize Before: %ld KB | VmRSS Before: %ld KB\n\n", get_vmsize_kb(), get_vmrss_kb());
-    int *integers = malloc(numOfInts * sizeof(int));
-    // Isi 10 nilai terakhir saja
-    for (int i = 1; i <= 10; i++) {
+
+    // Isi nilai-nilai integer
+    for (int i = 1; i <= numOfInts; i++) {
         integers[numOfInts-i] = numOfInts - (i-1);
     }
+
     // Print output
+    int showAmmount = MIN(10, numOfInts);
     printf("Starting memory address: %p\n", integers);
     fprintf(file, "Starting memory address: %p\n", integers);
-    printf("Printing first 10 values in reverse order: \n");
-    fprintf(file, "Printing first 10 values in reverse order: \n");
-    for (int i = 1; i <= 10; i++) {
+    printf("Printing first %d values in reverse order: \n", showAmmount);
+    fprintf(file, "Printing first %d values in reverse order: \n", showAmmount);
+    for (int i = 1; i <= showAmmount; i++) {
         printf("%d\n", integers[numOfInts-i]);
         fprintf(file, "%d\n", integers[numOfInts-i]);
     }
     // Print VmSize & VmRSS ke terminal dan file log
-    printf("\nVmSize After: %ld KB | VmRSS After: %ld KB\n", get_vmsize_kb(), get_vmrss_kb());
+    printf("\nVmSize After: %ld KB | VmRSS After: %ld KB\n\n", get_vmsize_kb(), get_vmrss_kb());
     fprintf(file, "\nVmSize After: %ld KB | VmRSS After: %ld KB\n", get_vmsize_kb(), get_vmrss_kb());
 
     free(integers);
@@ -99,16 +110,6 @@ void print_malloc_free_output(int numOfInts) {
 
     // Menyalin isi file C6-malloc_std-[timestamp].txt ke file C6-malloc_sys-[timestamp].txt
     copy_std_to_sys(stdLibName, sysCallName);
-    // file = fopen(stdLibName, "r");
-    // char buffer[BUFFER_SIZE];
-    // int fileSys = open(sysCallName, O_WRONLY | O_CREAT, 0666);
-    // size_t bytes_read;
-    // ssize_t bytes_written;
-    // while ((bytes_read = fread(buffer, 1, BUFFER_SIZE, file)) > 0) {
-    //     bytes_written = write(fileSys, buffer, bytes_read);
-    // }
-    // fclose(file);
-    // close(fileSys);
 }
 
 
@@ -282,9 +283,7 @@ int main(){
     while(running){
         // ganti opsinya nanti
         printf("Masukkan pilihan (ketik '1' untuk malloc/free): ");
-        if (scanf("%d",&option) != 1){
-            return 1;
-        }
+        scanf("%d",&option);
 
         switch (option)
         {
@@ -299,7 +298,7 @@ int main(){
             // running = false;
             break;
             
-            case 2:
+        case 2:
             /* allocate mmap */
             break;
 
