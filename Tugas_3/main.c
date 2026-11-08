@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/mman.h>
+#include "banner.h"
 
 #define BUFFER_SIZE 4096
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
@@ -63,7 +64,7 @@ void generate_log_filenames(const char *metode, char *std_name, char *sys_name, 
 }
 
 void write_log_std(const char *filename, const char *content) {
-    FILE *file = fopen(filename, "w+");
+    FILE *file = fopen(filename, "a+");
     if (!file) {
         perror("[ERROR] Gagal membuat log std");
         return;
@@ -73,26 +74,13 @@ void write_log_std(const char *filename, const char *content) {
 }
 
 void write_log_sys(const char *filename, const char *content) {
-    int fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+    int fd = open(filename, O_WRONLY | O_CREAT | O_APPEND, 0666);
     if (fd == -1) {
         perror("[ERROR] Gagal membuat log sys");
         return;
     }
     write(fd, content, strlen(content));
     close(fd);
-}
-
-void copy_std_to_sys(char *stdLib, char *sysCall){
-    FILE *file = fopen(stdLib, "r");
-    char buffer[BUFFER_SIZE];
-    int fileSys = open(sysCall, O_WRONLY | O_CREAT, 0666);
-    size_t bytes_read;
-    ssize_t bytes_written;
-    while ((bytes_read = fread(buffer, 1, BUFFER_SIZE, file)) > 0) {
-        bytes_written = write(fileSys, buffer, bytes_read);
-    }
-    fclose(file);
-    close(fileSys);
 }
 
 // ===== Velicia ====
@@ -110,21 +98,20 @@ void print_malloc_free_output(int numOfInts) {
     }
 
     // Membuat nama file dengan timestamp
-    time_t now = time(NULL);
-    struct tm *t = localtime(&now);
     char stdLibName[100];
     char sysCallName[100];
-    strftime(stdLibName, sizeof(stdLibName), "C6-malloc_std-%d-%m-%Y_%H:%M:%S.txt", t);
-    strftime(sysCallName, sizeof(sysCallName), "C6-malloc_sys-%d-%m-%Y_%H:%M:%S.txt", t);
+    generate_log_filenames("malloc", stdLibName, sysCallName, 100);
     
-    // Menjalankan logika malloc/free serta mencetak output ke terminal
-    // Output dicetak ke file dengan menggunakan Standard C Library
-    FILE *file = fopen(stdLibName, "w+");
-    fprintf(file, "You picked malloc/free\n");
+    // Menjalankan logika malloc/free serta mencetak output ke terminal dan 2 file log
+    write_log_std(stdLibName, "You picked malloc/free\n");
+    write_log_sys(sysCallName, "You picked malloc/free\n");
 
     // Print VmSize & VmRSS ke terminal dan file log
     printf("VmSize Before: %ld KB | VmRSS Before: %ld KB\n\n", vmSizeBefore, vmRssBefore);
-    fprintf(file, "VmSize Before: %ld KB | VmRSS Before: %ld KB\n\n", vmSizeBefore, vmRssBefore);
+    char stringVm[255]; 
+    snprintf(stringVm, 255 * sizeof(char), "VmSize Before: %ld KB | VmRSS Before: %ld KB\n\n", vmSizeBefore, vmRssBefore);
+    write_log_std(stdLibName, stringVm);
+    write_log_sys(sysCallName, stringVm);
 
     // Isi nilai-nilai integer
     for (int i = 1; i <= numOfInts; i++) {
@@ -134,12 +121,23 @@ void print_malloc_free_output(int numOfInts) {
     // Print starting address dan maksimum 10 integer terakhir
     int showAmmount = MIN(10, numOfInts);
     printf("Starting memory address: %p\n", integers);
-    fprintf(file, "Starting memory address: %p\n", integers);
+    char stringInt[255]; 
+    snprintf(stringInt, 255 * sizeof(int), "Starting memory address: %p\n", integers);
+    write_log_std(stdLibName, stringInt);
+    write_log_sys(sysCallName, stringInt);
+
     printf("Printing first %d values in reverse order: \n", showAmmount);
-    fprintf(file, "Printing first %d values in reverse order: \n", showAmmount);
+    char stringInt2[255]; 
+    snprintf(stringInt2, 255 * sizeof(int), "Printing first %d values in reverse order: \n", showAmmount);
+    write_log_std(stdLibName, stringInt2);
+    write_log_sys(sysCallName, stringInt2);
+
     for (int i = 1; i <= showAmmount; i++) {
         printf("%d\n", integers[numOfInts-i]);
-        fprintf(file, "%d\n", integers[numOfInts-i]);
+        char stringInt3[255]; 
+        snprintf(stringInt3, 255 * sizeof(int), "%d\n", integers[numOfInts-i]);
+        write_log_std(stdLibName, stringInt3);
+        write_log_sys(sysCallName, stringInt3);
     }
 
     // Catat VmSize dan VmRSS setelah allocate memori
@@ -148,14 +146,13 @@ void print_malloc_free_output(int numOfInts) {
 
     // Print VmSize dan VmRSS ke terminal dan file log
     printf("\nVmSize After: %ld KB | VmRSS After: %ld KB\n\n", vmSizeAfter, vmRssAfter);
-    fprintf(file, "\nVmSize After: %ld KB | VmRSS After: %ld KB\n", vmSizeAfter, vmRssAfter);
+    char stringVm2[255]; 
+    snprintf(stringVm2, 255 * sizeof(int), "\nVmSize After: %ld KB | VmRSS After: %ld KB\n\n", vmSizeAfter, vmRssAfter);
+    write_log_std(stdLibName, stringVm2);
+    write_log_sys(sysCallName, stringVm2);
 
     // Free ruang memori yang dialokasikan dan menutup file log
     free(integers);
-    fclose(file);
-
-    // Menyalin isi file C6-malloc_std-[timestamp].txt ke file C6-malloc_sys-[timestamp].txt
-    copy_std_to_sys(stdLibName, sysCallName);
 }
 
 
