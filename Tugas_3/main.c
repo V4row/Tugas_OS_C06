@@ -6,6 +6,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <banner.h>
 #include <sys/mman.h>
 
 #define BUFFER_SIZE 4096
