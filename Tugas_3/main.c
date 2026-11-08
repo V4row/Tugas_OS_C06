@@ -87,8 +87,6 @@ void write_log_sys(const char *filename, const char *content) {
     close(fd);
 }
 
-<<<<<<< Updated upstream
-=======
 void copy_std_to_sys(char *stdLib, char *sysCall){
     FILE *file = fopen(stdLib, "r");
     char buffer[BUFFER_SIZE];
@@ -156,7 +154,6 @@ void print_mmap_munmap_output(int numOfInts){
     copy_std_to_sys(stdLibName, sysCallName);
 }
 
->>>>>>> Stashed changes
 // ===== Velicia ====
 void print_malloc_free_output(int numOfInts) {
     // Catat VmSize dan VmRSS sebelum allocate memori
