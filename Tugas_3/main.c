@@ -82,19 +82,6 @@ void write_log_sys(const char *filename, const char *content) {
     write(fd, content, strlen(content));
     close(fd);
 }
-
-void copy_std_to_sys(char *stdLib, char *sysCall){
-    FILE *file = fopen(stdLib, "r");
-    char buffer[BUFFER_SIZE];
-    int fileSys = open(sysCall, O_WRONLY | O_CREAT, 0666);
-    size_t bytes_read;
-    ssize_t bytes_written;
-    while ((bytes_read = fread(buffer, 1, BUFFER_SIZE, file)) > 0) {
-        bytes_written = write(fileSys, buffer, bytes_read);
-    }
-    fclose(file);
-    close(fileSys);
-}
 void print_mmap_munmap_output(int numOfInts){
     long vmSizeBefore = get_vmsize_kb();
     long vmRssBefore = get_vmrss_kb();
@@ -110,15 +97,15 @@ void print_mmap_munmap_output(int numOfInts){
     char sysCallName[128];
     generate_log_filenames("mmap", stdLibName, sysCallName, sizeof(stdLibName));
 
-    FILE *file = fopen(stdLibName, "w+");
-    if (!file){
-        perror("[ERROR] Gagal membuat berkas log std");
-        munmap(integers, bytes_to_allocate);
-        return;
-    }
-    fprintf(file, "You picked mmap/munmap.\n");
+    //catat baris pertama ke std dan sys
+    write_log_std(stdLibName, "You picked mmap/munmap.\n");
+    write_log_sys(sysCallName, "You picked mmap/munmap.\n");
+
     printf("VmSize Before: %ld KB | VmRSS Before: %ld KB\n\n", vmSizeBefore, vmRssBefore);
-    fprintf(file, "VmSize Before: %ld KB | VmRSS Before: %ld KB\n\n", vmSizeBefore, vmRssBefore);
+    char stringBuffer[255];
+    snprintf(stringBuffer, sizeof(stringBuffer), "VmSize Before: %ld KB | VmRSS Before: %ld KB\n\n", vmSizeBefore, vmRssBefore);
+    write_log_std(stdLibName, stringBuffer);
+    write_log_sys(sysCallName, stringBuffer);
 
     // Mengisi array integer
     for (int i = 1; i <= numOfInts; i++) {
@@ -127,27 +114,30 @@ void print_mmap_munmap_output(int numOfInts){
 
     int showAmount = MIN(10, numOfInts);
     printf("Starting memory address: %p\n", (void *)integers);
-    fprintf(file, "Starting memory address: %p\n", (void *)integers);
+    snprintf(stringBuffer, sizeof(stringBuffer), "VmSize Before: %ld KB | VmRSS Before: %ld KB\n\n", vmSizeBefore, vmRssBefore);
+    write_log_std(stdLibName, stringBuffer);
+    write_log_sys(sysCallName, stringBuffer);
+
     printf("Printing first %d values in reverse order:\n", showAmount);
-    fprintf(file, "Printing first %d values in reverse order:\n", showAmount);
+    snprintf(stringBuffer, sizeof(stringBuffer), "Printing first %d values in reverse order:\n", showAmount);
+    write_log_std(stdLibName, stringBuffer);
+    write_log_sys(sysCallName, stringBuffer);
 
     for (int i = 1; i <= showAmount; i++) {
         printf("%d\n", integers[numOfInts - i]);
-        fprintf(file, "%d\n", integers[numOfInts - i]);
+        snprintf(stringBuffer, sizeof(stringBuffer), "%d\n", integers[numOfInts - i]);
+        write_log_std(stdLibName, stringBuffer);
+        write_log_sys(sysCallName, stringBuffer);
     }
-
     long vmSizeAfter = get_vmsize_kb();
     long vmRssAfter = get_vmrss_kb();
 
     printf("\nVmSize After: %ld KB | VmRSS After: %ld KB\n\n", vmSizeAfter, vmRssAfter);
-    fprintf(file, "\nVmSize After: %ld KB | VmRSS After: %ld KB\n", vmSizeAfter, vmRssAfter);
-
+    snprintf(stringBuffer, sizeof(stringBuffer), "\nVmSize After: %ld KB | VmRSS After: %ld KB\n\n", vmSizeAfter, vmRssAfter);
+    write_log_std(stdLibName, stringBuffer);
+    write_log_sys(sysCallName, stringBuffer);
     // Bebaskan memori fisik dan alamat virtual ke kernel dengan munmap
-    munmap(integers, bytes_to_allocate);
-    fclose(file);
-
-    // Salin isi berkas log std ke log sys via System Call (Bagian 3)
-    copy_std_to_sys(stdLibName, sysCallName);
+    munmap(integers, bytes_to_allocate);    
 }
 
 // ===== Velicia ====
@@ -420,6 +410,13 @@ int main(){
             
         case 2:
             /* allocate mmap */
+            int allocation_amount_mmap;
+            printf("\nYou picked mmap/munmap\n");
+            printf("How many integers to allocate: ");
+            if (scanf("%d", &allocation_amount_mmap) == 1) {
+                printf("\n");
+                print_mmap_munmap_output(allocation_amount_mmap);
+            }
             break;
 
         case 3:
