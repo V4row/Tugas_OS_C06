@@ -62,15 +62,19 @@ void copy_std_to_sys(char *stdLib, char *sysCall){
 
 // ===== Velicia ====
 void print_malloc_free_output(int numOfInts) {
-    // Allocate ke memory dengan malloc
+    // Catat VmSize dan VmRSS sebelum allocate memori
+    long vmSizeBefore = get_vmsize_kb();
+    long vmRssBefore = get_vmrss_kb();
+
+    // Allocate ke memori dengan malloc
     int *integers = malloc(numOfInts * sizeof(int));
 
-    if (integers == NULL) {
+    if (integers == NULL) { // Jika gagal allocate memori
         printf("Gagal melakukan alokasi memori dengan malloc.\n");
-        return;
+        return; // Fungsi berhenti
     }
 
-    // Membuat timestamp untuk nama file
+    // Membuat nama file dengan timestamp
     time_t now = time(NULL);
     struct tm *t = localtime(&now);
     char stdLibName[100];
@@ -82,16 +86,17 @@ void print_malloc_free_output(int numOfInts) {
     // Output dicetak ke file dengan menggunakan Standard C Library
     FILE *file = fopen(stdLibName, "w+");
     fprintf(file, "You picked malloc/free\n");
+
     // Print VmSize & VmRSS ke terminal dan file log
-    printf("VmSize Before: %ld KB | VmRSS Before: %ld KB\n\n", get_vmsize_kb(), get_vmrss_kb());
-    fprintf(file, "VmSize Before: %ld KB | VmRSS Before: %ld KB\n\n", get_vmsize_kb(), get_vmrss_kb());
+    printf("VmSize Before: %ld KB | VmRSS Before: %ld KB\n\n", vmSizeBefore, vmRssBefore);
+    fprintf(file, "VmSize Before: %ld KB | VmRSS Before: %ld KB\n\n", vmSizeBefore, vmRssBefore);
 
     // Isi nilai-nilai integer
     for (int i = 1; i <= numOfInts; i++) {
         integers[numOfInts-i] = numOfInts - (i-1);
     }
 
-    // Print output
+    // Print starting address dan maksimum 10 integer terakhir
     int showAmmount = MIN(10, numOfInts);
     printf("Starting memory address: %p\n", integers);
     fprintf(file, "Starting memory address: %p\n", integers);
@@ -101,10 +106,16 @@ void print_malloc_free_output(int numOfInts) {
         printf("%d\n", integers[numOfInts-i]);
         fprintf(file, "%d\n", integers[numOfInts-i]);
     }
-    // Print VmSize & VmRSS ke terminal dan file log
-    printf("\nVmSize After: %ld KB | VmRSS After: %ld KB\n\n", get_vmsize_kb(), get_vmrss_kb());
-    fprintf(file, "\nVmSize After: %ld KB | VmRSS After: %ld KB\n", get_vmsize_kb(), get_vmrss_kb());
 
+    // Catat VmSize dan VmRSS setelah allocate memori
+    long vmSizeAfter = get_vmsize_kb();
+    long vmRssAfter = get_vmrss_kb();
+
+    // Print VmSize dan VmRSS ke terminal dan file log
+    printf("\nVmSize After: %ld KB | VmRSS After: %ld KB\n\n", vmSizeAfter, vmRssAfter);
+    fprintf(file, "\nVmSize After: %ld KB | VmRSS After: %ld KB\n", vmSizeAfter, vmRssAfter);
+
+    // Free ruang memori yang dialokasikan dan menutup file log
     free(integers);
     fclose(file);
 
