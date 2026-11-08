@@ -2,15 +2,64 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <malloc.h>
 #include <time.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/mman.h>
 
 #define BUFFER_SIZE 4096
 
 
 // ====== Tempat buat fungsi ======
+long get_vmsize_kb() {
+    FILE *file = fopen("/proc/self/status", "r");
+    if (!file) return -1;
+    
+    char line[128];
+    long vmsize = 0;
+    while (fgets(line, sizeof(line), file)) {
+        // Mencari string "VmSize:"
+        if (strncmp(line, "VmSize:", 7) == 0) {
+            sscanf(line + 7, "%ld", &vmsize);
+            break;
+        }
+    }
+    fclose(file);
+    return vmsize;
+}
 
+long get_vmrss_kb() {
+    FILE *file = fopen("/proc/self/status", "r");
+    if (!file) return -1;
+    
+    // Mencari baris VmRSS lalu mengambil nilainya
+    char line[128];
+    long vmrss = 0;
+    while (fgets(line, sizeof(line), file)) {
+        if (strncmp(line, "VmRSS:", 6) == 0) {
+            sscanf(line + 6, "%ld", &vmrss);
+            break;
+        }
+    }
+    fclose(file);
+    return vmrss;
+}
+
+void copy_std_to_sys(char *stdLib, char *sysCall){
+    FILE *file = fopen(stdLib, "r");
+    char buffer[BUFFER_SIZE];
+    int fileSys = open(sysCall, O_WRONLY | O_CREAT, 0666);
+    size_t bytes_read;
+    ssize_t bytes_written;
+    while ((bytes_read = fread(buffer, 1, BUFFER_SIZE, file)) > 0) {
+        bytes_written = write(fileSys, buffer, bytes_read);
+    }
+    fclose(file);
+    close(fileSys);
+}
+
+// ===== Velicia ====
 void print_malloc_free_output(int numOfInts) {
     // Membuat timestamp untuk nama file
     time_t now = time(NULL);
@@ -49,86 +98,249 @@ void print_malloc_free_output(int numOfInts) {
     fclose(file);
 
     // Menyalin isi file C6-malloc_std-[timestamp].txt ke file C6-malloc_sys-[timestamp].txt
-    file = fopen(stdLibName, "r");
-    char buffer[BUFFER_SIZE];
-    int fileSys = open(sysCallName, O_WRONLY | O_CREAT, 0666);
-    size_t bytes_read;
-    ssize_t bytes_written;
-    while ((bytes_read = fread(buffer, 1, BUFFER_SIZE, file)) > 0) {
-        bytes_written = write(fileSys, buffer, bytes_read);
-    }
-    fclose(file);
-    close(fileSys);
+    copy_std_to_sys(stdLibName, sysCallName);
+    // file = fopen(stdLibName, "r");
+    // char buffer[BUFFER_SIZE];
+    // int fileSys = open(sysCallName, O_WRONLY | O_CREAT, 0666);
+    // size_t bytes_read;
+    // ssize_t bytes_written;
+    // while ((bytes_read = fread(buffer, 1, BUFFER_SIZE, file)) > 0) {
+    //     bytes_written = write(fileSys, buffer, bytes_read);
+    // }
+    // fclose(file);
+    // close(fileSys);
 }
 
 
-long get_vmrss_kb() {
-    FILE *file = fopen("/proc/self/status", "r");
-    if (!file) return -1;
-    
-    // Mencari baris VmRSS lalu mengambil nilainya
+// ===== Vebian =====
+
+int in_heap(void *addr){
+    FILE *file = fopen("/proc/self/maps", "r");
+    if (!file){
+        return -1;
+    }
+
+    int result = 0;
     char line[128];
-    long vmrss = 0;
+    unsigned long target = (unsigned long)addr;
+
     while (fgets(line, sizeof(line), file)) {
-        if (strncmp(line, "VmRSS:", 6) == 0) {
-            sscanf(line + 6, "%ld", &vmrss);
-            break;
+        if (strstr(line, "[heap]")) {
+            unsigned long start, end;
+            if (sscanf(line, "%lx-%lx", &start, &end) == 2 && target >= start && target < end){
+                result = 1; // true karena ada didalam rentang
+            }
         }
     }
+    // tetap 0/false jika tidak didalam rentang heap (tidak pernah masuk ifnya)
     fclose(file);
-    return vmrss;
+    return result;
 }
 
-long get_vmsize_kb() {
-    FILE *file = fopen("/proc/self/status", "r");
-    if (!file) return -1;
-    
-    char line[128];
-    long vmsize = 0;
-    while (fgets(line, sizeof(line), file)) {
-        // Mencari string "VmSize:"
-        if (strncmp(line, "VmSize:", 7) == 0) {
-            sscanf(line + 7, "%ld", &vmsize);
-            break;
+void varian_6(){
+    const size_t KB = 1024;
+    size_t threshold = 128;
+    size_t sizes_kb[] = {1,2,4,8, 16, 32, 64, 96, 120, 127, 128, 129, 256, 512, 1024};
+    int len = sizeof(sizes_kb) / sizeof(sizes_kb[0]);
+    void *pointers[len];
+    long first_mmap_used = -1;
+
+    if (mallopt(M_MMAP_THRESHOLD, (int)(threshold * KB)) == 0) {
+        perror("mallopt");
+        return;
+    }
+
+    for (int i = 0; i < len; i++) {
+        char *brk_before = (char *)sbrk(0);
+        pointers[i] = malloc(sizes_kb[i] * KB);
+
+        if (pointers[i] == NULL) {
+            printf("%-11zuKB Alokasi gagal\n", sizes_kb[i]);
+
+            continue;
+        }
+        char *brk_after = (char *)sbrk(0);
+        long delta_brk = brk_after - brk_before;
+
+        int is_heap = in_heap(pointers[i]);
+        if (is_heap == -1){
+            printf("%-11zuKB %-+10ld %-16p %-16p %s\n",
+               sizes_kb[i], delta_brk, pointers[i], (void *)brk_after,
+               "gagal menkonfirmasi");
+        }
+        else{
+            if (!is_heap && first_mmap_used < 0){
+                first_mmap_used = (long) sizes_kb[i];
+            }
+
+            printf("%-11zuKB %-+10ld %-16p %-16p %s\n",
+               sizes_kb[i], delta_brk, pointers[i], (void *)brk_after,
+               is_heap ? "heap" : "mmap");
         }
     }
-    fclose(file);
-    return vmsize;
+
+    if (first_mmap_used >= 0)
+    {
+        printf("\n[HASIL] malloc mulai beralih ke mmap pada ukuran %ld KB (threshold %zu KB)\n\n",first_mmap_used, threshold);
+    }
+    else {
+        printf("[HASIL] malloc tidak pernah beralih ke mmap\n\n");
+    }
+
+    for (int i = 0; i < len;i++){
+        free(pointers[i]);
+    }
+    // fclose(file);
+    // copy_std_to_sys(stdLibName,sysCallName);
 }
+
+void varian_6_with_log(){
+    // timestamp
+    time_t now = time(NULL);
+    struct tm *t = localtime(&now);
+    char stdLibName[128];
+    char sysCallName[128];
+    strftime(stdLibName, sizeof(stdLibName), "C6-varian_6-mmap_threshold_std-%d-%m-%Y_%H:%M:%S.txt", t);
+    strftime(sysCallName, sizeof(sysCallName), "C6-varian_6-mmap_threshold_sys-%d-%m-%Y_%H:%M:%S.txt", t);
+
+    FILE *file = fopen(stdLibName, "w+");
+    fprintf(file,"--- Varian 6: mmap Threshold ---\n");
+    fprintf(file,"M_MMAP_THRESHOLD = 128 KB\n\n");
+    fprintf(file,"Ukuran     Delta brk     Alamat           Ujung brk        Hasil\n");
+    
+    const size_t KB = 1024;
+    size_t threshold = 128;
+    size_t sizes_kb[] = {1,2,4,8, 16, 32, 64, 96, 120, 127, 128, 129, 256, 512, 1024};
+    int len = sizeof(sizes_kb) / sizeof(sizes_kb[0]);
+    void *pointers[len];
+    long first_mmap_used = -1;
+
+    if (mallopt(M_MMAP_THRESHOLD, (int)(threshold * KB)) == 0) {
+        perror("mallopt");
+        return;
+    }
+
+    for (int i = 0; i < len; i++) {
+        char *brk_before = (char *)sbrk(0);
+        pointers[i] = malloc(sizes_kb[i] * KB);
+
+        if (pointers[i] == NULL) {
+            printf("%-11zuKB Alokasi gagal\n", sizes_kb[i]);
+            fprintf(file, "%-11zuKB Alokasi gagal\n", sizes_kb[i]);
+            continue;
+        }
+        char *brk_after = (char *)sbrk(0);
+        long delta_brk = brk_after - brk_before;
+
+        int is_heap = in_heap(pointers[i]);
+        if (is_heap == -1){
+            printf("%-11zuKB %-+10ld %-16p %-16p %s\n",
+               sizes_kb[i], delta_brk, pointers[i], (void *)brk_after,
+               "gagal menkonfirmasi");
+            fprintf(file,"%-11zuKB %-+10ld %-16p %-16p %s\n",
+               sizes_kb[i], delta_brk, pointers[i], (void *)brk_after,
+               "gagal menkonfirmasi");
+        }
+        else{
+            if (!is_heap && first_mmap_used < 0){
+                first_mmap_used = (long) sizes_kb[i];
+            }
+
+            printf("%-11zuKB %-+10ld %-16p %-16p %s\n",
+               sizes_kb[i], delta_brk, pointers[i], (void *)brk_after,
+               is_heap ? "heap" : "mmap");
+            fprintf(file, "%-11zuKB %-+10ld %-16p %-16p %s\n",
+               sizes_kb[i], delta_brk, pointers[i], (void *)brk_after,
+               is_heap ? "heap" : "mmap");
+        }
+    }
+
+    if (first_mmap_used >= 0)
+    {
+        printf("\n[HASIL] malloc mulai beralih ke mmap pada ukuran %ld KB (threshold %zu KB)\n\n",first_mmap_used, threshold);
+        fprintf(file,"\n[HASIL] malloc mulai beralih ke mmap pada ukuran %ld KB (threshold %zu KB)\n\n",first_mmap_used, threshold);
+    }
+    else {
+        printf("[HASIL] malloc tidak pernah beralih ke mmap\n\n");
+        fprintf(file,"\n[HASIL] malloc tidak pernah beralih ke mmap\n\n");
+    }
+
+    for (int i = 0; i < len;i++){
+        free(pointers[i]);
+    }
+    fclose(file);
+    copy_std_to_sys(stdLibName,sysCallName);
+}
+
 
 // ====== Tempat buat fungsi ======
 
 int main(){
     int option;
     bool running = true;
-    printf("Masukkan pilihan (ketik '2' untuk malloc/free): ");
-    scanf("%d",&option);
-
+    
     while(running){
+        // ganti opsinya nanti
+        printf("Masukkan pilihan (ketik '1' untuk malloc/free): ");
+        if (scanf("%d",&option) != 1){
+            return 1;
+        }
 
         switch (option)
         {
         case 1:
             /* allocate malloc */
-            break;
-
-        case 2:
-            /* allocate mmap */
             int allocation_ammount;
             printf("You picked malloc/free\n");
             printf("How many integers to allocate: ");
             scanf("%d", &allocation_ammount);
             printf("\n");
             print_malloc_free_output(allocation_ammount);
-            running = false;
+            // running = false;
+            break;
+            
+            case 2:
+            /* allocate mmap */
             break;
 
         case 3:
             /* varian 6 */
+            int log_option;
+            printf("\nIngin mencatat log?");
+            printf("\n1. Tidak perlu");
+            printf("\n2. Lakukan pencatatan");
+            printf("\n(Keluaran mungkin saja berbeda)");
+            printf("\nMasukkan pilihan (ketik '1' untuk malloc/free): ");
+            if (scanf("%d",&log_option) !=1){
+                return 1;
+            }
+            switch (log_option)
+            {
+            case 1:
+                /* code */
+                printf("\n--- Varian 6: mmap Threshold ---\n");
+                printf("M_MMAP_THRESHOLD = 128 KB\n\n");
+                printf("Ukuran     Delta brk     Alamat           Ujung brk        Hasil\n");
+                varian_6();
+                break;
+                
+                case 2:
+                /* code */
+                printf("\n--- Varian 6: mmap Threshold ---\n");
+                printf("M_MMAP_THRESHOLD = 128 KB\n\n");
+                printf("Ukuran     Delta brk     Alamat           Ujung brk        Hasil\n");
+                varian_6_with_log();
+                break;
+            
+            default:
+                printf("Pilihan tidak valid!\n");
+                break;
+            }
             break;
 
         case 4:
             running = false;
+            printf("Keluar!\n");
             break;
         
         default:
