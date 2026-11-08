@@ -47,6 +47,40 @@ long get_vmrss_kb() {
     return vmrss;
 }
 
+void generate_log_filenames(const char *metode, char *std_name, char *sys_name, size_t size) {
+    time_t now = time(NULL);
+    struct tm *t = localtime(&now);
+    
+    // Format: C6-[metode]_std-DD-MM-YYYY_HH:MM:SS.txt
+    snprintf(std_name, size, "%s-%s_std-%02d-%02d-%d_%02d:%02d:%02d.txt",
+             GROUP_ID, metode, t->tm_mday, t->tm_mon + 1, t->tm_year + 1900,
+             t->tm_hour, t->tm_min, t->tm_sec);
+             
+    snprintf(sys_name, size, "%s-%s_sys-%02d-%02d-%d_%02d:%02d:%02d.txt",
+             GROUP_ID, metode, t->tm_mday, t->tm_mon + 1, t->tm_year + 1900,
+             t->tm_hour, t->tm_min, t->tm_sec);
+}
+
+void write_log_std(const char *filename, const char *content) {
+    FILE *file = fopen(filename, "w+");
+    if (!file) {
+        perror("[ERROR] Gagal membuat log std");
+        return;
+    }
+    fprintf(file, "%s", content);
+    fclose(file);
+}
+
+void write_log_sys(const char *filename, const char *content) {
+    int fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+    if (fd == -1) {
+        perror("[ERROR] Gagal membuat log sys");
+        return;
+    }
+    write(fd, content, strlen(content));
+    close(fd);
+}
+
 void copy_std_to_sys(char *stdLib, char *sysCall){
     FILE *file = fopen(stdLib, "r");
     char buffer[BUFFER_SIZE];
