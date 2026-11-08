@@ -293,8 +293,8 @@ int main(){
     
     while(running){
         // ganti opsinya nanti
-        printf("Masukkan pilihan (ketik '1' untuk malloc/free): ");
-        scanf("%d",&option);
+        print_banner();
+        option = get_option();
 
         switch (option)
         {
@@ -355,7 +355,6 @@ int main(){
         
         default:
             printf("Tidak valid!");
-            break;
         }
     }
     return 0;

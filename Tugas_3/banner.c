@@ -9,13 +9,13 @@ void print_banner() {
     printf("4. Exit\n");
 }
 
-int get_choice() {
-    int choice;
+int get_option() {
+    int option;
     printf("Input: ");
-    if (scanf("%d", &choice) != 1) {
+    if (scanf("%d", &option) != 1) {
         // Membersihkan buffer jika input bukan angka
         while (getchar() != '\n');
         return -1; 
     }
-    return choice;
+    return option;
 }
