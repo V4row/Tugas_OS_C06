@@ -10,6 +10,7 @@
 
 #define BUFFER_SIZE 4096
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#define GROUP_ID "C6"
 
 
 // ====== Tempat buat fungsi ======
