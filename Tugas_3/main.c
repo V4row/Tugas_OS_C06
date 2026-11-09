@@ -207,7 +207,7 @@ void print_malloc_free_output(int numOfInts) {
     write_log_std(stdLibName, stringVm2);
     write_log_sys(sysCallName, stringVm2);
 
-    // Free ruang memori yang dialokasikan dan menutup file log
+    // Free ruang memori yang dialokasikan
     free(integers);
 }
 
@@ -404,7 +404,6 @@ int main(){
             scanf("%d", &allocation_ammount);
             printf("\n");
             print_malloc_free_output(allocation_ammount);
-            // running = false;
             break;
             
         case 2:
