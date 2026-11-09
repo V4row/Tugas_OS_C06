@@ -1,0 +1,18 @@
+You picked malloc/free
+VmSize Before: 3944 KB | VmRSS Before: 1344 KB
+
+Starting memory address: 0xc20c0a854120
+Printing first 10 values in reverse order: 
+100
+99
+98
+97
+96
+95
+94
+93
+92
+91
+
+VmSize After: 3944 KB | VmRSS After: 1608 KB
+
