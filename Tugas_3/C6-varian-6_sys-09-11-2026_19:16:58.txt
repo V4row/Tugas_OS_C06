@@ -1,0 +1,22 @@
+--- Varian 6: mmap Threshold ---
+M_MMAP_THRESHOLD = 128 KB
+
+Ukuran     Delta brk     Alamat           Ujung brk        Hasil
+1          KB +0         0x35728410       0x3574a000       heap
+2          KB +0         0x357293f0       0x3574a000       heap
+4          KB +0         0x35729c00       0x3574a000       heap
+8          KB +0         0x3572ac10       0x3574a000       heap
+16         KB +0         0x3572cc20       0x3574a000       heap
+32         KB +0         0x35730c30       0x3574a000       heap
+64         KB +0         0x35738c40       0x3574a000       heap
+96         KB +225280    0x35748c50       0x35781000       heap
+120        KB +0         0x35760c60       0x35781000       heap
+127        KB +253952    0x3577ec70       0x357bf000       heap
+128        KB +0         0x3579e880       0x357bf000       heap
+129        KB +0         0x357be890       0x357df000       heap
+256        KB +0         0x76ed2cc38010   0x357ff000       mmap
+512        KB +0         0x76ed2cbb7010   0x357ff000       mmap
+1024       KB +0         0x76ed2cab6010   0x357ff000       mmap
+
+[HASIL] malloc mulai beralih ke mmap pada ukuran 256 KB (threshold 128 KB)
+

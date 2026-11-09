@@ -1,0 +1,19 @@
+You picked mmap/munmap.
+VmSize Before: 1212 KB | VmRSS Before: 972 KB
+
+VmSize Before: 1212 KB | VmRSS Before: 972 KB
+
+Printing first 10 values in reverse order:
+12341234
+12341233
+12341232
+12341231
+12341230
+12341229
+12341228
+12341227
+12341226
+12341225
+
+VmSize After: 49420 KB | VmRSS After: 49180 KB
+
