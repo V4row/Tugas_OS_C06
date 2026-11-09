@@ -2,7 +2,7 @@
 #include "banner.h"
 
 void print_banner() {
-    printf("=== KELOMPOK XX - TUGAS MEMORI ===\n");
+    printf("=== KELOMPOK C06 - TUGAS MEMORI ===\n");
     printf("1. Allocate with malloc/free\n");
     printf("2. Allocate with mmap/munmap\n");
     printf("3. Eksekusi Fitur Variasi Kelompok\n");
