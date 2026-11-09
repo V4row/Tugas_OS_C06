@@ -441,14 +441,11 @@ int main(){
                 
                 case 2:
                 /* code */
-                    int allocation_amount;
-                    printf("\nYou picked mmap/munmap\n");
-                    printf("How many integers to allocate: ");
-                    if (scanf("%d", &allocation_amount) == 1) {
-                        printf("\n");
-                        print_mmap_munmap_output(allocation_amount);
-                    }
-                    break;
+                printf("\n--- Varian 6: mmap Threshold ---\n");
+                printf("M_MMAP_THRESHOLD = 128 KB\n\n");
+                printf("Ukuran     Delta brk     Alamat           Ujung brk        Hasil\n");
+                varian_6_with_log();
+                break;
             
             default:
                 printf("Pilihan tidak valid!\n");

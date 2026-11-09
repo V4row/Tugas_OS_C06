@@ -1,5 +1,7 @@
 *.txt
 *.log
 main
+main_dynamic
+main_static
 *.exe
 .DS_Store
