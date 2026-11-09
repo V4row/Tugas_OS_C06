@@ -6,8 +6,8 @@
 #include <time.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <banner.h>
 #include <sys/mman.h>
+#include "banner.h"
 
 #define BUFFER_SIZE 4096
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
