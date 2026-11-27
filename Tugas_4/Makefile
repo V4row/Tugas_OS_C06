@@ -8,7 +8,7 @@ LIB_HDRS := iolib.h banner.h
 LIB_OBJS := $(LIB_SRCS:.c=.o)
 
 # Daftar binary program pengujian
-TARGETS  := workload durability_bench
+TARGETS  := workload durability_bench ext_inode
 
 .PHONY: all clean setup teardown run-env
 
