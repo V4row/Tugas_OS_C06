@@ -1,32 +1,42 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-IMG_FILE="ext4_lab.img"
-MOUNT_POINT="/mnt/ext4_lab"
-FALLBACK_DIR="./ext4_lab_fallback"
-IMG_SIZE_MB=100
+IMG_FILE="lab_disk.img"
+IMG_PATH="$(realpath -m "${IMG_FILE}")"
+MOUNT_POINT="/mnt/media_b"
+IMG_SIZE_MB=64
 TARGET_USER="${SUDO_USER:-$USER}"
+
+# Jika sudah ter-mount, langsung selesai dengan aman (idempotent)
+if mountpoint -q "${MOUNT_POINT}" 2>/dev/null; then
+    CURRENT_DEV=$(findmnt -n -o SOURCE "${MOUNT_POINT}")
+    echo "[OK] Media B sudah aktif di ${MOUNT_POINT} (device: ${CURRENT_DEV})"
+    exit 0
+fi
+
+# Lepas loop device lama jika masih nyangkut pada image yang sama
+for dev in $(losetup -j "${IMG_PATH}" 2>/dev/null | cut -d: -f1 || true); do
+    echo "[INFO] Melepas loop device lama ${dev}..."
+    sudo losetup -d "${dev}"
+done
 
 echo "[INFO] Membuat disk image ${IMG_FILE} (${IMG_SIZE_MB} MB)..."
 dd if=/dev/zero of="${IMG_FILE}" bs=1M count="${IMG_SIZE_MB}" status=progress
 
-echo "[INFO] Memformat ${IMG_FILE} sebagai ext4 (block sie 4096 byte)..."
-mkfs.ext4 -b 4096 -F "${IMG_FILE}"
+echo "[INFO] Menghubungkan ke loop device..."
+LOOP_DEV=$(sudo losetup -f --show "${IMG_FILE}")
+echo "[INFO] Terhubung ke ${LOOP_DEV}"
 
-echo "[INFO] Mengecek dukungan loop device..."
-if sudo losetup -f >/dev/null 2>&1; then
-    sudo mkdir -p "${MOUNT_POINT}"
-    if sudo mount -o loop "${IMG_FILE}" "${MOUNT_POINT}"; then
-        sudo chown -R "${TARGET_USER}:${TARGET_USER}" "${MOUNT_POINT}"
-        sudo chmod 755 "${MOUNT_POINT}"
-        echo "[OK] Loop device berhasil di-mount ke ${MOUNT_POINT}"
-        df -T "${MOUNT_POINT}"
-        exit 0
-    fi
-fi
+echo "[INFO] Memformat ${LOOP_DEV} sebagai ext4..."
+sudo mkfs.ext4 -F "${LOOP_DEV}"
 
-echo "[WARN] Loop mount tidak didukung di lingkungan ini (misal WSL2/container)."
-echo "[WARN] Menggunakan direktori fallback: ${FALLBACK_DIR}"
-echo "[WARN] Wajib dokumentasikan alasan & perbedaannya di laporan!"
-mkdir -p "${FALLBACK_DIR}"
-chmod 755 "${FALLBACK_DIR}"
+echo "[INFO] Me-mount ${LOOP_DEV} ke ${MOUNT_POINT}..."
+sudo mkdir -p "${MOUNT_POINT}"
+sudo mount "${LOOP_DEV}" "${MOUNT_POINT}"
+sudo chown -R "${TARGET_USER}:${TARGET_USER}" "${MOUNT_POINT}"
+sudo chmod 755 "${MOUNT_POINT}"
+
+echo "[OK] Media B siap digunakan!"
+echo "     Direktori (--dir) : ${MOUNT_POINT}"
+echo "     Device    (--dev) : $(basename "${LOOP_DEV}")"
+df -hT "${MOUNT_POINT}"
