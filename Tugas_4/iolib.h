@@ -16,6 +16,7 @@ typedef struct {
 
 // Struct untuk hasil perhitungan statistik
 typedef struct {
+    double sum;
     double avg;
     double min;
     double max;
@@ -41,8 +42,8 @@ IoStats io_calc_stats(double *samples, size_t count);
 // 4. Penulis baris CSV ke folder logs/
 // Format file: logs/<group_id>-<program>-<scenario>-<timestamp>.csv
 // Jika header != NULL dan file baru dibuat, header akan ditulis otomatis di baris pertama.
-int io_write_csv(const char *group_id, const char *program, const char *scenario,
-                 const char *timestamp, const char *header, const char *row_fmt, ...);
+int io_write_csv(const char *program, const char *scenario,
+                 const char *header, const char *row_fmt, ...);
 
 // 5. Penyimpan spesifikasi OS ke logs/<group_id>-env-<timestamp>.txt
 // Otomatis membuat folder logs/ jika belum ada.

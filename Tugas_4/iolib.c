@@ -159,7 +159,7 @@ static double percentile_sorted(const double *sorted, size_t n, double p) {
 }
 
 IoStats io_calc_stats(double *samples, size_t count) {
-    IoStats st = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    IoStats st = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     if (!samples || count == 0) return st;
 
     double sum = 0.0;
@@ -169,6 +169,7 @@ IoStats io_calc_stats(double *samples, size_t count) {
 
     qsort(samples, count, sizeof(double), cmp_double);
 
+    st.sum = sum;
     st.avg = sum / (double)count;
     st.min = samples[0];
     st.max = samples[count - 1];
@@ -182,13 +183,16 @@ IoStats io_calc_stats(double *samples, size_t count) {
 // 4. Penulis Baris CSV
 // ============================================================================
 
-int io_write_csv(const char *group_id, const char *program, const char *scenario,
-                 const char *timestamp, const char *header, const char *row_fmt, ...) {
+int io_write_csv(const char *program, const char *scenario,
+                 const char *header, const char *row_fmt, ...) {
     ensure_logs_dir();
 
+    char timestamp[32];
+    io_get_timestamp(timestamp, sizeof(timestamp));
+
     char filepath[512];
-    snprintf(filepath, sizeof(filepath), "logs/%s-%s-%s-%s.csv",
-             group_id, program, scenario, timestamp);
+    snprintf(filepath, sizeof(filepath), "logs/C6-%s-%s-%s.csv",
+             program, scenario, timestamp);
 
     struct stat st;
     int need_header = (stat(filepath, &st) != 0 || st.st_size == 0);
